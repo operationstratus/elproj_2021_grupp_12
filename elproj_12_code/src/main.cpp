@@ -1,15 +1,17 @@
-#include <Arduino.h>
+//#include <Arduino.h>
 
 
 // Här har jag bara klistrat in koden från Crystal Ball
 
+//include "LiquidCrystal.h"
 
 #include <LiquidCrystal.h>
 
-LiquidCrystal lcd(12,11,5,4,3,2); // generates an instance 
-in the lcd
 
-const int switchPin = 6;
+LiquidCrystal lcd(12,11,5,4,3,2); // generates an instance in the lcd
+
+const int switchPin = 13;
+const int contrastPin = 9;
 int switchState = 0;
 int prevSwitchState = 0;
 int reply;
@@ -17,15 +19,16 @@ int reply;
 void setup() {
   lcd.begin(16,2);
   
-  pinMode(switchPin, INPUT);
+  pinMode(contrastPin, OUTPUT);
   lcd.print("Preguntame");
   lcd.setCursor(0,1); // changes the Cursor to continue writing in the second row
   lcd.print("Bola de Cristal");
 }
 
 void loop() {
-  switchState=digitalRead(switchPin);
+  analogWrite(contrastPin, 100);
 
+  /*
   if (switchState != prevSwitchState) {
     if (switchState == LOW) {
       reply = random(8);
@@ -61,7 +64,7 @@ void loop() {
         break;
       }
     }
-  }
+  }*/
   
 
 }
