@@ -1,12 +1,4 @@
-//#include <Arduino.h>
-
-
-// Här har jag bara klistrat in koden från Crystal Ball
-
-//include "LiquidCrystal.h"
-
 #include <LiquidCrystal.h>
-
 
 LiquidCrystal lcd(12,11,5,4,3,2); // generates an instance in the lcd
 
@@ -38,8 +30,11 @@ void loop() {
       
       switch(meny){
         case 0:
+        lcd.setCursor(0,0);
         lcd.print("Next:");
         lcd.print(counter);
+        lcd.setCursor(0,1);
+        lcd.print("Menue");
         break;
       }
     }
