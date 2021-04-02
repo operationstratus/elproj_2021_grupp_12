@@ -15,18 +15,38 @@ const int contrastPin = 9;
 int switchState = 0;
 int prevSwitchState = 0;
 int reply;
+int counter = 0;
+int meny = 0;
 
 void setup() {
   lcd.begin(16,2);
   
   pinMode(contrastPin, OUTPUT);
+  /*
   lcd.print("Next: 05:00");
   lcd.setCursor(0,1); // changes the Cursor to continue writing in the second row
-  lcd.print("Bola de Cristal");
+  lcd.print("Bola de Cristal");*/
 }
 
 void loop() {
   analogWrite(contrastPin, 0);
+
+  switchState = digitalRead(switchPin);
+  if (switchState != prevSwitchState) {
+    if (switchState == LOW) {
+      lcd.clear();
+      
+      switch(meny){
+        case 0:
+        lcd.print("Next:");
+        lcd.print(counter);
+        break;
+      }
+    }
+  }
+  prevSwitchState = switchState;
+
+  
 
   /*
   if (switchState != prevSwitchState) {
@@ -68,7 +88,3 @@ void loop() {
   
 
 }
-
-
-
-
