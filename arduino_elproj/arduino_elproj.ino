@@ -4,14 +4,13 @@ LiquidCrystal lcd(12,11,5,4,3,2); // generates an instance in the lcd
 
 const int switchPin = 13;
 
-
 int switchState = 0;
 int prevSwitchState = 0;
-int reply;
-int counter = 0;
 int meny = 0;
 
-const int var = 0; // test variable
+
+// Variabler som vi får tag på något sätt
+String nextTime = "12:40";
 
 void setup() {
   lcd.begin(16,2);
@@ -25,27 +24,27 @@ void loop() {
 
   switchState = digitalRead(switchPin);
   if (switchState != prevSwitchState) {
-    if (switchState == LOW) {
+    if (switchState == HIGH) {
       lcd.clear();
+
+      
       switch(meny){
         case 0:
-        LCDprint(["Hej"]);
+
+        String line0 = "Next:  " + nextTime;
+        String line1 = "Menue";
+        myLCDprint(line0, line1);
         break;
+
       }
     }
   }
   prevSwitchState = switchState;
 }
 
-void LCDprint(int row1[]){
-  char *line1 = "";
-  for (int i=0; i < sizeof(row1); i++){
-    line1 = line1 + String(row1[i]);
-  }
-  
-  
+void myLCDprint(String line0, String line1) {
   lcd.setCursor(0,0);
-  lcd.print(line1);/*
+  lcd.print(line0);
   lcd.setCursor(0,1);
-  lcd.print(line2);*/
+  lcd.print(line1);
 }
