@@ -18,11 +18,8 @@ int menuIntro = 0; // inital switch state of menuMain
 int menuMain = 0;
 int curMenuItem = 0;
 
-
-const int interval = 500;
-int prevTime = 0;
-
 String menuMainString[] = {"List alarms", "Set time", "Reset wheel", "Sound"};
+int leng = 0;
 
 // Variabler som vi får tag på något sätt
 String nextTime = "12:40"; // från en klocka?
@@ -31,22 +28,27 @@ void setup() {
   Serial.begin(9600);
   lcd.begin(16,2);
 
+  // calculate the lenght of the current menu array and write the initial menu
+  leng = sizeof(menuMainString)/sizeof(menuMainString[0]);
   menuWrite(menuMainString);
 }
 
 void loop() {
+  // calculate the lenght of the current menu array
+  leng = sizeof(menuMainString)/sizeof(menuMainString[0]);
+  
   //read the current pressed keyboard
   keyState = keyPressed();
-  delay(15); // pausar systemet i 15ms, OBS vitalt för att undvika bounce-signaler och kalibalik.
+  delay(50); // pausar systemet i 15ms, OBS vitalt för att undvika bounce-signaler och kalibalik.
 
   if (keyState != prevKeyState) {
     if (keyState != "N") {
       Serial.println(keyState);
-      if (keyState == "U") {
+      if (keyState == "U" && curMenuItem > 0) {
         curMenuItem -= 1;
         menuWrite(menuMainString);
       }
-      if (keyState == "D") {
+      if (keyState == "D" && curMenuItem < leng-1) {
         curMenuItem += 1;
         //Serial.println(curMenuItem);
         menuWrite(menuMainString);
@@ -57,9 +59,16 @@ void loop() {
 }
 
 void menuWrite(String menu[]) {
+  
+  Serial.println(curMenuItem);
   line0 = ">" + menu[0+curMenuItem];
-  line1 = " " + menu[1+curMenuItem];
-  //Serial.println(line0+"   "+line1);
+  if (curMenuItem < leng-1){
+    line1 = " " + menu[1+curMenuItem];
+  } else {
+    line1 = " ";
+  }
+
+  //Serial.println("line0 = "+line0+"\nline1="+line1+"curMenuItem = "+curMenuItem+"\n\n");
   myLCDprint(line0, line1);
 }
 
