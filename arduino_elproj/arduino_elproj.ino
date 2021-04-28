@@ -1,6 +1,7 @@
 #include <LiquidCrystal.h>
 
-LiquidCrystal lcd(12,11,5,4,3,2); // generates an instance in the lcd
+LiquidCrystal lcd(9,8,7,6,5,4); // generates an instance in the lcd
+//LiquidCrystal lcd(12,11,5,4,3,2); // ORIGINAL CALL OF THE CLASS
 
 const int switchPin = 13;
 const int kbdPin = A0;
@@ -88,7 +89,7 @@ void myLCDprint(String line0, String line1) {
 
 void readKBD() {
   kbdIn = analogRead(kbdPin);
-  //Serial.println(kbdIn);
+  Serial.println(kbdIn);
   /* Configuration:
    *               Up
    * Enter    Left    Right
