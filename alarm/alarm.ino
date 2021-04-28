@@ -24,7 +24,7 @@ void setup() {
   while (!Serial) ; // wait for Arduino Serial Monitor
   delay(200);
 
-  setRTC(17,9);
+  setRTC(15,4);
   getNextAlarm();
 }
 
