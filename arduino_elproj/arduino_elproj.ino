@@ -11,7 +11,7 @@ LiquidCrystal lcd(9,8,7,6,5,4); // generates an instance in the lcd
 //-------------------------READING KEYBOARD
 const int kbdPin = A0;
 int kbdIn = 0; // pin for the keyboard
-String returnStr = ""; // variable inside readKBD() function
+String returnStr = ""; // variable used inside readKBD() function
 String keyState = ""; // current key pressed: "E", "U", "D", "R", "L", or "N"
 String prevKeyState = ""; // key pressed in the last loop cycle
 
@@ -23,7 +23,7 @@ String line1 = ""; // string to be printed on the second row on the lcd screen
 int menuIntro = 0; // inital switch state of menuMain
 int menuMain = 0;
 int curMenuItem = 0;
-String menuMainString[] = {"List alarms", "Set time", "Reset wheel", "Sound"};
+String menuMainString[] = {"List alarms", "Set time", "Reset wheel", "Sound", "Shamoun!"};
 String menuListAlarms[] = {"08:00", "12:30", "15:00", "18:45"};
 int leng = 0;
 
