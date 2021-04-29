@@ -56,6 +56,18 @@ String nextAlarmContent = "";
 
 //////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////
+//////////////////////       STEPPER MOTOR     ///////////////////////////////
+
+/*Example sketch to control a stepper motor with A4988/DRV8825 stepper motor driver and Arduino without a library. More info: https://www.makerguides.com */
+// Define stepper motor connections and steps per revolution:
+#define dirPin 2
+#define stepPin 3
+#define stepsPerRevolution 200*2
+#define stepDelay 5000
+
+
+//////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////
 //////////////////////////        SETUP        ///////////////////////////////
 
 void setup() {
@@ -72,6 +84,16 @@ void setup() {
   // calculate the lenght of the current menu array and write the initial menu
   leng = sizeof(menuMainString)/sizeof(menuMainString[0]);
   menuWrite(menuMainString);
+
+
+  // INIT STEPPER MOTOR SYSTEM
+  // Declare pins as output:
+  pinMode(stepPin, OUTPUT);
+  pinMode(dirPin, OUTPUT);
+  for(int i = 0; i < 8; i++){
+    dispense();
+    delay(1000);
+  }
 
 }
 
@@ -106,6 +128,61 @@ void loop() {
   ///////////////////////////////////////////////////// LOOP SD AND ALARM
   if(getTime() == nextAlarmTime) alarm();
   //delay(5000);
+
+  ///////////////////////////////////////////////////// LOOP STEPPER
+
+  /*
+  digitalWrite(stepPin, HIGH);
+  delayMicroseconds(stepDelay);
+  digitalWrite(stepPin, LOW);
+  delayMicroseconds(stepDelay);
+  delay(500);
+  */
+  /*
+  // Set the spinning direction clockwise:
+  digitalWrite(dirPin, HIGH);
+  // Spin the stepper motor 1 revolution slowly:
+  for (int i = 0; i < stepsPerRevolution; i++) {
+    // These four lines result in 1 step:
+    digitalWrite(stepPin, HIGH);
+    delayMicroseconds(stepDelay);
+    digitalWrite(stepPin, LOW);
+    delayMicroseconds(stepDelay);
+  }
+  // Set the spinning direction counterclockwise:
+  digitalWrite(dirPin, LOW);
+  // Spin the stepper motor 1 revolution quickly:
+  for (int i = 0; i < stepsPerRevolution; i++) {
+    // These four lines result in 1 step:
+    digitalWrite(stepPin, HIGH);
+    delayMicroseconds(1000);
+    digitalWrite(stepPin, LOW);
+    delayMicroseconds(1000);
+  }
+  delay(1000);
+  // Set the spinning direction clockwise:
+  digitalWrite(dirPin, HIGH);
+  // Spin the stepper motor 5 revolutions fast:
+  for (int i = 0; i < 5 * stepsPerRevolution; i++) {
+    // These four lines result in 1 step:
+    digitalWrite(stepPin, HIGH);
+    delayMicroseconds(500);
+    digitalWrite(stepPin, LOW);
+    delayMicroseconds(500);
+  }
+  delay(1000);
+  // Set the spinning direction counterclockwise:
+  digitalWrite(dirPin, LOW);
+  //Spin the stepper motor 5 revolutions fast:
+  for (int i = 0; i < 5 * stepsPerRevolution; i++) {
+    // These four lines result in 1 step:
+    digitalWrite(stepPin, HIGH);
+    delayMicroseconds(500);
+    digitalWrite(stepPin, LOW);
+    delayMicroseconds(500);
+  }
+  delay(1000);
+  */
 }
 
 
@@ -193,10 +270,10 @@ void getNextAlarm(){
       Serial.println(tempTime+" "+getTime()+" "+nextAlarmTime);
       if(tempTime > getTime() && tempTime < nextAlarmTime){ //"smallest" time AFTER current time
         nextAlarmTime = tempTime;
-        nextAlarmContent = alarmString.substring(i+1,alarmString.substring(i+1).indexOf('&')+i+1);
+        nextAlarmContent = alarmString.substring(i+1,alarmString.substring(i+1).indexOf(';')+i+1);
       }
      }
-     else if(alarmString[i] == '&'){
+     else if(alarmString[i] == ';'){
       tempTime = "";
      }
      else {
@@ -305,5 +382,23 @@ String getTime(){
     String tempMinute = String(tm.Minute);
     if (tm.Minute < 10) tempMinute = '0'+tempMinute;
     return tempHour+':'+tempMinute;
+  }
+}
+
+
+///////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////////
+/////////////////////// FUNCTIONS FOR STEPPER MOTOR   /////////////////////////////
+
+void dispense(){
+  // Set the spinning direction clockwise:
+  digitalWrite(dirPin, HIGH);
+  // Spin the stepper motor 1 revolution slowly:
+  for (int i = 0; i < (stepsPerRevolution)/8; i++) {
+    // These four lines result in 1 step:
+    digitalWrite(stepPin, HIGH);
+    delayMicroseconds(stepDelay);
+    digitalWrite(stepPin, LOW);
+    delayMicroseconds(stepDelay);
   }
 }
