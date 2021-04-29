@@ -56,6 +56,10 @@ String nextAlarmContent = "";
 //Buzzer
 const int buzzerPin = 10;
 
+
+// SCREEN SAVE
+int counter = 0;
+
 //////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////
 //////////////////////       STEPPER MOTOR     ///////////////////////////////
@@ -96,7 +100,7 @@ void setup() {
 
 
   //??? // TESTS
-  setRTC(17, 9);
+  setRTC(17, 4);
   getNextAlarm();
   //Alarm();
 
@@ -111,10 +115,14 @@ void loop() {
   ///////////////////////////////////////////////////// LOOP MENU AND KBD
   readKBD(); // updates the keyState value
   
+  if (counter % 4000 == 0) {
+    String line1 = "Next alarm " + nextAlarmTime;
+    myLCDprint(getTime(), line1);
+  }
   
   
   if (keyState != prevKeyState && keyState != "N") {
-
+    counter = 0;
     // calculate the lenght of the current menu array
     leng = sizeof(menuMainString)/sizeof(menuMainString[0]);
     
@@ -133,6 +141,8 @@ void loop() {
     
   }
   prevKeyState = keyState;
+
+  counter ++;
 
 
   ///////////////////////////////////////////////////// LOOP SD AND ALARM
@@ -250,7 +260,6 @@ void alarm(){
   }
   while(keyState != "E"){
     readKBD();
-    Serial.println("keyState = " + keyState);
     digitalWrite(buzzerPin, HIGH);
   }
   digitalWrite(buzzerPin, LOW);
