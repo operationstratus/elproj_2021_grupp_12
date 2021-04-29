@@ -53,6 +53,8 @@ const int chipSelect = 10;
 String nextAlarmTime = "";
 String nextAlarmContent = "";
 
+//Buzzer
+const int buzzerPin = 10;
 
 //////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////
@@ -64,7 +66,6 @@ String nextAlarmContent = "";
 #define stepPin 3
 #define stepsPerRevolution 200*2 // times two since we have enabled half stepping
 #define stepDelay 5000
-
 
 //////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////
@@ -78,6 +79,8 @@ void setup() {
   // INIT THE ALARM AND SD
   //setRTC(15,4); // not needed anymore
   getNextAlarm();
+  pinMode(buzzerPin, OUTPUT);
+  digitalWrite(buzzerPin, LOW);
 
   // INIT THE LCD AND MENU VARS
   lcd.begin(16,2);
@@ -91,9 +94,19 @@ void setup() {
   pinMode(stepPin, OUTPUT);
   pinMode(dirPin, OUTPUT);
 
+
+  //??? // TESTS
+  setRTC(17, 9);
+  getNextAlarm();
+  //Alarm();
+
 }
 
 void loop() {
+
+
+  //??? TESTS
+  digitalWrite(buzzerPin, LOW);
   
   ///////////////////////////////////////////////////// LOOP MENU AND KBD
   readKBD(); // updates the keyState value
@@ -123,8 +136,9 @@ void loop() {
 
 
   ///////////////////////////////////////////////////// LOOP SD AND ALARM
+  //Serial.println("getTime: "+getTime()+" nextAlarmTime: "+nextAlarmTime);
   if(getTime() == nextAlarmTime) alarm();
-  //delay(5000);
+  //delay(1000);
 }
 
 
@@ -228,10 +242,19 @@ void getNextAlarm(){
 
 //activates the alarm and then calls getNextAlarm() after alarm has been deactivated
 void alarm(){
-  while(true){
-   Serial.println("ALARM!");
-   delay(1000);
+  Serial.println("Alarm!");
+  if(nextAlarmContent == "1"){
+    dispense();
+  } else {
+    myLCDprint(nextAlarmContent, "");
   }
+  while(keyState != "E"){
+    readKBD();
+    Serial.println("keyState = " + keyState);
+    digitalWrite(buzzerPin, HIGH);
+  }
+  digitalWrite(buzzerPin, LOW);
+  menuWrite(menuMainString);
   getNextAlarm();
 }
 
@@ -285,7 +308,6 @@ void writeToSD(String fileName, String content){
 bool setRTC(int newHour, int newMin){
   tm.Hour = newHour;
   tm.Minute = newMin;
-  //tm.Second = 0;
   tm.Second = 50;
   if (RTC.write(tm)) {
       return true;
