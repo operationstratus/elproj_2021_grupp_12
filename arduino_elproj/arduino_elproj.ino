@@ -71,6 +71,8 @@ int counter = 0;
 #define stepsPerRevolution 200*2 // times two since we have enabled half stepping
 #define stepDelay 5000
 
+
+
 //////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////
 //////////////////////////        SETUP        ///////////////////////////////
@@ -118,6 +120,7 @@ void loop() {
   if (counter % 4000 == 0) {
     String line1 = "Next alarm " + nextAlarmTime;
     myLCDprint(getTime(), line1);
+    curMenuItem = 0;
   }
   
   
