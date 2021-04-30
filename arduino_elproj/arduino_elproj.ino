@@ -21,9 +21,9 @@ String line1 = ""; // string to be printed on the second row on the lcd screen
 
 //-------------------------MENU SYSTEM
 int menuIntro = 0; // inital switch state of menuMain
-int menuMain = 0;
+int curMenuArray = 0;
 int curMenuItem = 0;
-String menuMainString[] = {"List alarms", "Set time", "Reset wheel", "Sound", "Shamoun!"};
+String menuMainString[] = {"List alarms", "Set time", "Reset wheel", "Sound", "Shamoun!", "GK elak"};
 String menuListAlarms[] = {"08:00", "12:30", "15:00", "18:45"};
 int leng = 0;
 
@@ -113,39 +113,9 @@ void loop() {
 
   //??? TESTS
   digitalWrite(buzzerPin, LOW);
-  
-  ///////////////////////////////////////////////////// LOOP MENU AND KBD
-  readKBD(); // updates the keyState value
-  
-  if (counter % 4000 == 0) {
-    String line1 = "Next alarm " + nextAlarmTime;
-    myLCDprint(getTime(), line1);
-    curMenuItem = 0;
-  }
-  
-  
-  if (keyState != prevKeyState && keyState != "N") {
-    counter = 0;
-    // calculate the lenght of the current menu array
-    leng = sizeof(menuMainString)/sizeof(menuMainString[0]);
-    
-    //Serial.println(keyState);
-    if (keyState == "U" && curMenuItem > 0) {
-      curMenuItem -= 1;
-      menuWrite(menuMainString);
-      Serial.println("pressed: "+keyState);
-    }
-    if (keyState == "D" && curMenuItem < leng-1) {
-      curMenuItem += 1;
-      //Serial.println(curMenuItem);
-      menuWrite(menuMainString);
-      Serial.println("pressed: "+keyState);
-    }
-    
-  }
-  prevKeyState = keyState;
 
-  counter ++;
+  updateMenu();
+  
 
 
   ///////////////////////////////////////////////////// LOOP SD AND ALARM
@@ -217,6 +187,45 @@ void readKBD() {
     returnStr = "N";
   }
   keyState = returnStr;
+}
+
+
+void updateMenu() {
+  ///////////////////////////////////////////////////// LOOP MENU AND KBD
+  readKBD(); // updates the keyState value
+  
+  if (counter % 4000 == 0) {
+    String line1 = "Next alarm " + nextAlarmTime;
+    myLCDprint(getTime(), line1);
+    curMenuItem = 0;
+  }
+  
+  
+  if (curMenuArray == 0 && keyState != prevKeyState && keyState != "N") {
+    counter = 0;
+    // calculate the lenght of the current menu array
+    leng = sizeof(menuMainString)/sizeof(menuMainString[0]);
+    
+    //Serial.println(keyState);
+    if (keyState == "U" && curMenuItem > 0) {
+      curMenuItem -= 1;
+      menuWrite(menuMainString);
+      Serial.println("pressed: "+keyState);
+    }
+    if (keyState == "D" && curMenuItem < leng-1) {
+      curMenuItem += 1;
+      //Serial.println(curMenuItem);
+      menuWrite(menuMainString);
+      Serial.println("pressed: "+keyState);
+    }
+    if (keyState == "E") {
+      curMenuArray = curMenuItem;
+      curMenuItem = 0;
+    }
+  }
+  prevKeyState = keyState;
+
+  counter ++;
 }
 
 
