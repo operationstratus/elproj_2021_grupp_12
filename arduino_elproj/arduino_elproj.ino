@@ -25,6 +25,7 @@ int curMenuArray = 0;
 int curMenuItem = 0;
 String menuMainString[] = {"List alarms", "Set time", "Reset wheel", "Sound", "Shamoun!", "GK elak"};
 String menuAlarmString[] = {"08:00", "12:30", "15:00", "18:45"};
+String menuSoundString[] = {"Sound on", "Sound off"};
 int leng = 0;
 
 
@@ -204,6 +205,7 @@ void updateMenu() {
     myLCDprint(getTime(), line1);
     curMenuItem = 0;
   }
+  //Serial.println("curMenuArray = "+ String(curMenuArray));
 
   switch(curMenuArray) {
     case 0:
@@ -238,14 +240,12 @@ void mainMenu() {
       curMenuItem -= 1;
       menuWrite(menuMainString);
       Serial.println("pressed: "+keyState);
-    }
-    if (keyState == "D" && curMenuItem < leng-1) {
+    } else if (keyState == "D" && curMenuItem < leng-1) {
       curMenuItem += 1;
       //Serial.println(curMenuItem);
       menuWrite(menuMainString);
       Serial.println("pressed: "+keyState);
-    }
-    if (keyState == "R") {
+    } else if (keyState == "R") {
       Serial.println("pressed: "+keyState);
       curMenuArray = curMenuItem+1;
       curMenuItem = 0;
@@ -254,35 +254,65 @@ void mainMenu() {
 }
 void alarmMenu() {
   counter = 0;
+  menuWrite(menuAlarmString);
+  // calculate the lenght of the current menu array
+  leng = sizeof(menuAlarmString)/sizeof(menuAlarmString[0]);
+  
+  //Serial.println(keyState);
+  if (keyState == "U" && curMenuItem > 0) {
+    curMenuItem -= 1;
     menuWrite(menuAlarmString);
-    // calculate the lenght of the current menu array
-    leng = sizeof(menuAlarmString)/sizeof(menuAlarmString[0]);
-    
-    //Serial.println(keyState);
-    if (keyState == "U" && curMenuItem > 0) {
-      curMenuItem -= 1;
-      menuWrite(menuAlarmString);
-    }
-    if (keyState == "D" && curMenuItem < leng-1) {
-      curMenuItem += 1;
-      menuWrite(menuAlarmString);
-      Serial.println("pressed: "+keyState);
-    }
-    if (keyState == "L") {
-      Serial.println("pressed: "+keyState);
-      curMenuArray = 0;
-      curMenuItem = 0;
-      updateMenu();
-    }
-}
-
-void soundMenu() {
-  myLCDprint(">Sound on", " Sound off");
+  }
+  if (keyState == "D" && curMenuItem < leng-1) {
+    curMenuItem += 1;
+    menuWrite(menuAlarmString);
+    Serial.println("pressed: "+keyState);
+  }
+  if (keyState == "E") {
+    Serial.println("pressed: "+keyState);
+    curMenuArray = 0;
+    curMenuItem = 0;
+    updateMenu();
+    exit;
+  }
   if (keyState == "L") {
     Serial.println("pressed: "+keyState);
     curMenuArray = 0;
     curMenuItem = 0;
     updateMenu();
+    exit;
+  }
+}
+
+void soundMenu() {
+  
+  Serial.println("NUUUUUUU IIIIIII SOOOOOUUUND, keystate="+keyState);
+
+  counter = 0;
+  menuWrite(menuSoundString);
+  // calculate the lenght of the current menu array
+  leng = sizeof(menuSoundString)/sizeof(menuSoundString[0]);
+  
+  //Serial.println(keyState);
+  if (keyState == "U" && curMenuItem > 0) {
+    curMenuItem -= 1;
+    menuWrite(menuSoundString);
+  } else if (keyState == "D" && curMenuItem < leng-1) {
+    curMenuItem += 1;
+    menuWrite(menuSoundString);
+    Serial.println("pressed: "+keyState);
+  } else if (keyState == "R") {
+    Serial.println("pressed: "+keyState);
+    curMenuArray = 0;
+    curMenuItem = 0;
+    updateMenu();
+    exit;
+  } else if (keyState == "L") {
+    Serial.println("pressed: "+keyState);
+    curMenuArray = 0;
+    curMenuItem = 0;
+    updateMenu();
+    exit;
   }
 }
 
