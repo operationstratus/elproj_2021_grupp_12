@@ -25,7 +25,7 @@ int curMenuArray = 0;
 int curMenuItem = 0;
 String menuMainString[] = {"List alarms", "Set time", "Reset wheel", "Sound", "Shamoun!", "GK elak"};
 String menuAlarmString[] = {"08:00", "12:30", "15:00", "18:45"};
-String menuSoundString[] = {"Sound on", "Sound off"};
+String menuSoundString[] = {"Sound off", "Sound on"};
 int leng = 0;
 
 
@@ -223,7 +223,6 @@ void updateMenu() {
       soundMenu();
     }
     break;
-    
   }
   prevKeyState = keyState;
   counter ++;
@@ -249,6 +248,7 @@ void mainMenu() {
       Serial.println("pressed: "+keyState);
       curMenuArray = curMenuItem+1;
       curMenuItem = 0;
+      keyState = "N";
       updateMenu();
     }
 }
@@ -301,8 +301,10 @@ void soundMenu() {
     curMenuItem += 1;
     menuWrite(menuSoundString);
     Serial.println("pressed: "+keyState);
-  } else if (keyState == "R") {
+  } else if (keyState == "E") {
     Serial.println("pressed: "+keyState);
+    soundOn = curMenuItem;
+    Serial.println("soundOn = "+String(soundOn));
     curMenuArray = 0;
     curMenuItem = 0;
     updateMenu();
