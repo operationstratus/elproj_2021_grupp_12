@@ -24,7 +24,7 @@ int menuIntro = 0; // inital switch state of menuMain
 int curMenuArray = 0;
 int curMenuItem = 0;
 String menuMainString[] = {"List alarms", "Set time", "Reset wheel", "Sound", "Shamoun!", "GK elak"};
-String menuListAlarms[] = {"08:00", "12:30", "15:00", "18:45"};
+String menuAlarmString[] = {"08:00", "12:30", "15:00", "18:45"};
 int leng = 0;
 
 
@@ -59,6 +59,11 @@ const int buzzerPin = 10;
 
 // SCREEN SAVE
 int counter = 0;
+
+
+// ALARM
+int soundOn = 1;
+
 
 //////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////
@@ -199,9 +204,31 @@ void updateMenu() {
     myLCDprint(getTime(), line1);
     curMenuItem = 0;
   }
-  
-  
-  if (curMenuArray == 0 && keyState != prevKeyState && keyState != "N") {
+
+  switch(curMenuArray) {
+    case 0:
+    if (keyState != prevKeyState && keyState != "N"){
+      mainMenu();
+    }
+    break;
+    case 1:
+    if (keyState != prevKeyState && keyState != "N") {
+      alarmMenu();
+    }
+    break;
+    case 2:
+    if (keyState != prevKeyState && keyState != "N") {
+      soundMenu();
+    }
+    break;
+    
+  }
+  prevKeyState = keyState;
+  counter ++;
+}
+
+void mainMenu() {
+  menuWrite(menuMainString);
     counter = 0;
     // calculate the lenght of the current menu array
     leng = sizeof(menuMainString)/sizeof(menuMainString[0]);
@@ -218,15 +245,48 @@ void updateMenu() {
       menuWrite(menuMainString);
       Serial.println("pressed: "+keyState);
     }
-    if (keyState == "E") {
-      curMenuArray = curMenuItem;
+    if (keyState == "R") {
+      Serial.println("pressed: "+keyState);
+      curMenuArray = curMenuItem+1;
       curMenuItem = 0;
+      updateMenu();
     }
-  }
-  prevKeyState = keyState;
-
-  counter ++;
 }
+void alarmMenu() {
+  counter = 0;
+    menuWrite(menuAlarmString);
+    // calculate the lenght of the current menu array
+    leng = sizeof(menuAlarmString)/sizeof(menuAlarmString[0]);
+    
+    //Serial.println(keyState);
+    if (keyState == "U" && curMenuItem > 0) {
+      curMenuItem -= 1;
+      menuWrite(menuAlarmString);
+    }
+    if (keyState == "D" && curMenuItem < leng-1) {
+      curMenuItem += 1;
+      menuWrite(menuAlarmString);
+      Serial.println("pressed: "+keyState);
+    }
+    if (keyState == "L") {
+      Serial.println("pressed: "+keyState);
+      curMenuArray = 0;
+      curMenuItem = 0;
+      updateMenu();
+    }
+}
+
+void soundMenu() {
+  myLCDprint(">Sound on", " Sound off");
+  if (keyState == "L") {
+    Serial.println("pressed: "+keyState);
+    curMenuArray = 0;
+    curMenuItem = 0;
+    updateMenu();
+  }
+}
+
+
 
 
 ///////////////////////////////////////////////////////////////////////////////////
@@ -268,11 +328,14 @@ void alarm(){
   if(nextAlarmContent == "1"){
     dispense();
   } else {
-    myLCDprint(nextAlarmContent, "");
+    myLCDprint("Take your meds!", "");
+    //myLCDprint(nextAlarmContent, "");
   }
   while(keyState != "E"){
+    // test
     readKBD();
-    digitalWrite(buzzerPin, HIGH);
+    digitalWrite(buzzerPin, soundOn);
+    
   }
   digitalWrite(buzzerPin, LOW);
   menuWrite(menuMainString);
@@ -369,6 +432,7 @@ String getTime(){
     return tempHour+':'+tempMinute;
   }
 }
+
 
 
 ///////////////////////////////////////////////////////////////////////////////////
