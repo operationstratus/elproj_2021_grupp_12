@@ -8,6 +8,15 @@ class MenuLCD
   public:
     MenuLCD(int in0, int in1, int in2, int in3, int in4, int in5, int kbdPin);
     void updateMenu();
+    void readKBD();
+    void myLCDprint();
+    void menuWrite();
+    void mainMenu();
+    void alarmMenu();
+    void soundMenu();
+
+
+
   private:
     int _in0;
     int _in1;

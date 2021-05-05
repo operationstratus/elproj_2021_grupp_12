@@ -30,23 +30,26 @@ String menuSoundString[] = {"Sound off", "Sound on"};
 int leng = 0;
 */
 
+#include "MenuLCD.h"
+MenuLCD menuLCD(9,8,7,6,5,4,A0);
+
 //////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////
 ////////////////////// CLOCK, SD READER, ALARM ///////////////////////////////
 
 // include the SD library:
-#include <SPI.h>
-#include <SD.h>
+//#include <SPI.h>
+//#include <SD.h>
 //include RTC
 #include <Wire.h>
 #include <TimeLib.h>
-#include <DS1307RTC.h>
+//#include <DS1307RTC.h>
 
 //time struct
 tmElements_t tm;
 
 //files
-String alarmFile = "alarms.txt";
+//String alarmFile = "alarms.txt";
 
 //variable wires
 const int chipSelect = 10;
@@ -59,8 +62,11 @@ String nextAlarmContent = "";
 const int buzzerPin = 10;
 
 
-// SCREEN SAVE
-int counter = 0;
+#include "ReadSD.h"
+ReadSD readSD();
+
+
+
 
 
 // ALARM
@@ -103,7 +109,7 @@ void setup() {
   //lcd.begin(16,2);
   // calculate the lenght of the current menu array and write the initial menu
   //leng = sizeof(menuMainString)/sizeof(menuMainString[0]);
-  //menuWrite(menuMainString);
+  menuLCD.menuWrite(menuMainString);
 
 
   // INIT STEPPER MOTOR SYSTEM
@@ -382,12 +388,12 @@ void alarm(){
   }
   while(keyState != "E"){
     // test
-    readKBD();
+    menuLCD.readKBD();
     digitalWrite(buzzerPin, soundOn);
     
   }
   digitalWrite(buzzerPin, LOW);
-  menuWrite(menuMainString);
+  menuLCD.menuWrite(menuMainString);
   getNextAlarm();
 }
 

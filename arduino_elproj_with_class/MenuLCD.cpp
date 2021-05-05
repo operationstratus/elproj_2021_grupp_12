@@ -1,6 +1,7 @@
 #include <LiquidCrystal.h>
 
 #include "Arduino.h"
+
 #include "MenuLCD.h"
 
 
@@ -24,25 +25,27 @@ String menuAlarmString[] = {"08:00", "12:30", "15:00", "18:45"};
 String menuSoundString[] = {"Sound off", "Sound on"};
 int leng = 0;
 
+// SCREEN SAVE
+int counter = 0;
+
 
 MenuLCD::MenuLCD(int in0, int in1, int in2, int in3, int in4, int in5, int kbdPin)
 { 
+  _in0 = in0;
+  _in1 = in1;
+  _in2 = in2;
+  _in3 = in3;
+  _in4 = in4;
+  _in5 = in5;
+  _kbdPin = kbdPin;
+
+  LiquidCrystal lcd(_in0, _in1, _in2, _in3, _in4, _in5);
   lcd.begin(16,2);
-  leng = sizeof(menuMainString)/sizeof(menuMainString[0]);
-  menuWrite(menuMainString);
 
-  in0 _in0;
-  in1 _in1;
-  in2 _in2;
-  in3 _in3;
-  in4 _in4;
-  in5 _in5;
-  kbdPin _kbdPin;
-
-
+  leng = sizeof(menuMainString)/sizeof(menuMainString[0]);a
 }
 
-void MenuLCD::updateMenu() {
+void MenuLCD::updateMenu(String nextAlarmTime) {
   ///////////////////////////////////////////////////// LOOP MENU AND KBD
   readKBD(); // updates the keyState value
   
