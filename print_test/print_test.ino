@@ -1,5 +1,5 @@
 #include <LiquidCrystal.h>
-LiquidCrystal lcd(12,11,5,4,3,2); // generates an instance in the lcd
+LiquidCrystal lcd(9,8,7,6,5,4); // generates an instance in the lcd
 
 
 void setup() {
