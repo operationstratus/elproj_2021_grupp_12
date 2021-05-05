@@ -70,7 +70,7 @@ void loop() {
 
 void dispense(){
   // Set the spinning direction clockwise:
-  digitalWrite(dirPin, HIGH);
+  digitalWrite(dirPin, LOW);
   // Spin the stepper motor 1 revolution slowly:
   for (int i = 0; i < (stepsPerRevolution)/8; i++) {
     // These four lines result in 1 step:
