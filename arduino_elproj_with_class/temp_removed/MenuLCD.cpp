@@ -42,7 +42,7 @@ MenuLCD::MenuLCD(int in0, int in1, int in2, int in3, int in4, int in5, int kbdPi
   LiquidCrystal lcd(_in0, _in1, _in2, _in3, _in4, _in5);
   lcd.begin(16,2);
 
-  leng = sizeof(menuMainString)/sizeof(menuMainString[0]);a
+  leng = sizeof(menuMainString)/sizeof(menuMainString[0]);
 }
 
 void MenuLCD::updateMenu(String nextAlarmTime) {
