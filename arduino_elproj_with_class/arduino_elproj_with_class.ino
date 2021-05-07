@@ -13,7 +13,9 @@ ReadSD readSD(10); //const int chipSelect = 10;
 // ALARM
 String nextAlarmTime = "";
 String nextAlarmContent = "";
-int soundOn = 1;
+
+int soundOn = 0;
+const int buzzerPin = 10;
 
 
 
@@ -26,8 +28,17 @@ void setup() {
   delay(200);
 
 
-  nextAlarmTime = readSD.getNextTime();
-  Serial.println(nextAlarmTime);
+  String nextAlarmString = readSD.getNextAlarm();
+  Serial.println("nextAlarmString="+nextAlarmString);
+
+
+  
+  
+  //Serial.println(nextAlarmTime);
+
+
+  pinMode(buzzerPin, OUTPUT);
+  digitalWrite(buzzerPin, soundOn);
 
 }
 
@@ -35,7 +46,7 @@ void setup() {
 //////////////////////////////////////////////////////////////////////////////
 //////////////////////////        LOOP         ///////////////////////////////
 void loop() {
-  
+  digitalWrite(buzzerPin, soundOn);
 }
 
 

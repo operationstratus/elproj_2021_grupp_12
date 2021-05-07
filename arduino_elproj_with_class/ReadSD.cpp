@@ -11,6 +11,9 @@
 //files
 String alarmFile = "alarms.txt";
 
+//time struct
+tmElements_t tm;
+
 
 ReadSD::ReadSD(int chipSelect)
 {
@@ -43,36 +46,63 @@ String ReadSD::readFromSD(String fileName){
   
 }
 
+String ReadSD::getNextAlarm(){
 
-String ReadSD::getNextTime(){
-  String alarmString = readFromSD(alarmFile);
+  
+  String SDString = readFromSD(alarmFile);
   String tempTime = "";
-  nextAlarmTime = "23:59";
-  Serial.println(alarmString);
-  for(int i = 0; i < alarmString.length(); i++ ) {
-     if(alarmString[i] == '?'){
+  String nextAlarmTime = "23:59"; // last possible time
+  String nextAlarmContent = "";
+
+  
+  for(int i = 0; i < SDString.length(); i++ ) {
+     if(SDString[i] == '?'){
       //compare times
       tempTime.trim();
-      //Serial.println(tempTime+" "+getTime()+" "+nextAlarmTime);
+
       if(tempTime > getTime() && tempTime < nextAlarmTime){ //"smallest" time AFTER current time
         nextAlarmTime = tempTime;
-        nextAlarmContent = alarmString.substring(i+1,alarmString.substring(i+1).indexOf(';')+i+1);
+        nextAlarmContent = SDString.substring(i+1,SDString.substring(i+1).indexOf(';')+i+1);
+        i += sizeof(nextAlarmContent);
       }
      }
-     else if(alarmString[i] == ';'){
+     else if(SDString[i] == ';'){
       tempTime = "";
      }
      else {
-      tempTime += alarmString[i];
+      tempTime += SDString[i];
      }
   }
-  Serial.println("#"+nextAlarmTime+"#");
-  Serial.println("#"+nextAlarmContent+"#");
-  return nextAlarmTime
+
+
+  
+
+  
+  return nextAlarmTime + nextAlarmContent;
 }
 
 
-String ReadSD::getNextString(){
-  String rtn = "Hello world!";
-  return rtn;
+
+bool ReadSD::setRTC(int newHour, int newMin){
+
+  //sets the time in tm and resets the second to 0
+  //these values are then sent to the RTC
+
+  
+  tm.Hour = newHour;
+  tm.Minute = newMin;
+  tm.Second = 50;
+  if (RTC.write(tm)) {
+      return true;
+    }
+  else {
+    return false;
+  }
+}
+
+
+//Returns a String in the format hh:MM
+String ReadSD::getTime(){
+  RTC.read(tm);
+  return String(tm.Hour)+':'+String(tm.Minute);
 }
