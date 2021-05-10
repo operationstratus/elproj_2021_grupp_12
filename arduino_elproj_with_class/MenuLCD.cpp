@@ -5,6 +5,11 @@
 #include "MenuLCD.h"
 
 
+// ALARM
+String nextAlarmTime = "";
+String nextAlarmContent = "";
+
+
 //-------------------------READING KEYBOARD
 const int kbdPin = A0;
 int kbdIn = 0; // pin for the keyboard
@@ -28,6 +33,9 @@ int leng = 0;
 // SCREEN SAVE
 int counter = 0;
 
+// SOUND TOGGLE
+int soundOn = 0;
+
 
 MenuLCD::MenuLCD(int in0, int in1, int in2, int in3, int in4, int in5, int kbdPin)
 { 
@@ -45,16 +53,23 @@ MenuLCD::MenuLCD(int in0, int in1, int in2, int in3, int in4, int in5, int kbdPi
   leng = sizeof(menuMainString)/sizeof(menuMainString[0]);
 }
 
-void MenuLCD::updateMenu(String nextAlarmTime) {
-  ///////////////////////////////////////////////////// LOOP MENU AND KBD
-  readKBD(); // updates the keyState value
+void MenuLCD::updateMenu() {
+
+
+  // update this files global nextAlarmTime and nextAlarmContent variables. 
   
+  
+  
+  readKBD(); // updates the keyState value
+
+
+  //  SCREEN SAVER
   if (counter % 4000 == 0) {
     String line1 = "Next alarm " + nextAlarmTime;
     myLCDprint(getTime(), line1);
     curMenuItem = 0;
   }
-  //Serial.println("curMenuArray = "+ String(curMenuArray));
+  
 
   switch(curMenuArray) {
     case 0:
@@ -125,8 +140,6 @@ void MenuLCD::menuWrite(String menu[]) {
   } else {
     line1 = " ";
   }
-
-  //Serial.println("line0 = "+line0+"\nline1="+line1+"curMenuItem = "+curMenuItem+"\n\n");
   myLCDprint(line0, line1);
 }
 
@@ -134,24 +147,22 @@ void MenuLCD::menuWrite(String menu[]) {
 void MenuLCD::mainMenu() {
   menuWrite(menuMainString);
     counter = 0;
-    // calculate the lenght of the current menu array
     leng = sizeof(menuMainString)/sizeof(menuMainString[0]);
     
-    //Serial.println(keyState);
+    
     if (keyState == "U" && curMenuItem > 0) {
       curMenuItem -= 1;
       menuWrite(menuMainString);
-      Serial.println("pressed: "+keyState);
+
     } else if (keyState == "D" && curMenuItem < leng-1) {
       curMenuItem += 1;
       //Serial.println(curMenuItem);
       menuWrite(menuMainString);
-      Serial.println("pressed: "+keyState);
-    } else if (keyState == "R") {
-      Serial.println("pressed: "+keyState);
+
+    } else if (keyState == "E") {
+
       curMenuArray = curMenuItem+1;
       curMenuItem = 0;
-      keyState = "N";
       updateMenu();
     }
 }
@@ -192,7 +203,6 @@ void MenuLCD::alarmMenu() {
 
 void MenuLCD::soundMenu() {
   
-  Serial.println("NUUUUUUU IIIIIII SOOOOOUUUND, keystate="+keyState);
 
   counter = 0;
   menuWrite(menuSoundString);
@@ -222,4 +232,12 @@ void MenuLCD::soundMenu() {
     updateMenu();
     exit;
   }
+}
+
+
+///////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////// GETTERS ///////////////////////////////////////
+int MenuLCD::getSoundOn() {
+  return soundOn;
 }

@@ -20,6 +20,10 @@ class ReadSD
     String getTime();
     bool setRTC(int, int);
     bool pollRTC();
+
+    //getters.
+    String getNextAlarmTime();
+    String getNextAlarmContent();
     
   private:
     int _chipSelect;

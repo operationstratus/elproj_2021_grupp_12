@@ -11,6 +11,10 @@
 //files
 String alarmFile = "alarms.txt";
 
+// ALARM
+String nextAlarmTime = "";
+String nextAlarmContent = "";
+
 //time struct
 tmElements_t tm;
 
@@ -46,7 +50,7 @@ String ReadSD::readFromSD(String fileName){
   
 }
 
-String ReadSD::getNextAlarm(){
+void ReadSD::getNextAlarm(){
 
   
   String SDString = readFromSD(alarmFile);
@@ -73,12 +77,17 @@ String ReadSD::getNextAlarm(){
       tempTime += SDString[i];
      }
   }
+}
 
+///////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////// GETTERS ///////////////////////////////////////
+String ReadSD::getNextAlarmTime() {
+  return nextAlarmTime;
+}
 
-  
-
-  
-  return nextAlarmTime + nextAlarmContent;
+String ReadSD::getNextAlarmContent() {
+  return nextAlarmContent;
 }
 
 

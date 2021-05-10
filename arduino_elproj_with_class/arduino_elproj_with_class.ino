@@ -5,16 +5,17 @@
 #include "ReadSD.h"
 ReadSD readSD(10); //const int chipSelect = 10;
 
+#include "MenuLCD.h"
+MenuLCD menuLCD(9,8,7,6,5,4, A0);
+// MenuLCD(int in0, int in1, int in2, int in3, int in4, int in5, int kbdPin);
+
 
 //////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////
 //////////////////////////   GLOBAL VARIABLES  ///////////////////////////////
 
-// ALARM
-String nextAlarmTime = "";
-String nextAlarmContent = "";
 
-int soundOn = 0;
+
 const int buzzerPin = 10;
 
 
@@ -28,17 +29,19 @@ void setup() {
   delay(200);
 
 
-  String nextAlarmString = readSD.getNextAlarm();
-  Serial.println("nextAlarmString="+nextAlarmString);
+
+  readSD.getNextAlarm();
+  Serial.println("nextAlarmTime = "+readSD.getNextAlarmTime());
+  Serial.println("nextAlarmContent = "+readSD.getNextAlarmContent());
 
 
   
   
-  //Serial.println(nextAlarmTime);
 
 
-  pinMode(buzzerPin, OUTPUT);
-  digitalWrite(buzzerPin, soundOn);
+  // initial buzzer setup, PLZ HAVE IT OFF BY DEFAULT
+  pinMode(buzzerPin, OUTPUT); 
+  digitalWrite(buzzerPin, 0);
 
 }
 
@@ -46,7 +49,12 @@ void setup() {
 //////////////////////////////////////////////////////////////////////////////
 //////////////////////////        LOOP         ///////////////////////////////
 void loop() {
-  digitalWrite(buzzerPin, soundOn);
+  digitalWrite(buzzerPin, menuLCD.getSoundOn());
+
+
+  menuLCD.updateMenu();
+
+  
 }
 
 

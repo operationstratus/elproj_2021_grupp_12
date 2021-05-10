@@ -7,13 +7,16 @@ class MenuLCD
 {
   public:
     MenuLCD(int in0, int in1, int in2, int in3, int in4, int in5, int kbdPin);
-    void updateMenu();
+    void updateMenu(String, String);
     void readKBD();
     void myLCDprint();
     void menuWrite();
     void mainMenu();
     void alarmMenu();
     void soundMenu();
+
+    //getters.
+    int getSoundOn();
 
 
 
