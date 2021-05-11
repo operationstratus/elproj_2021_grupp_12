@@ -15,7 +15,7 @@ class ReadSD
   public:
     ReadSD(int chipSelect);
     String readFromSD(String);
-    String getNextAlarm();
+    void getNextAlarm();
 
     String getTime();
     bool setRTC(int, int);

@@ -6,8 +6,38 @@
 ReadSD readSD(10); //const int chipSelect = 10;
 
 #include "MenuLCD.h"
-MenuLCD menuLCD(9,8,7,6,5,4, A0);
-// MenuLCD(int in0, int in1, int in2, int in3, int in4, int in5, int kbdPin);
+MenuLCD menuLCD(A0);
+
+
+// ALARM
+String nextAlarmTime = "";
+String nextAlarmContent = "";
+
+
+//-------------------------READING KEYBOARD
+//const byte kbdIn = 0; // pin for the keyboard
+//String returnStr = ""; // variable used inside readKBD() function
+String keyState = ""; // current key pressed: "E", "U", "D", "R", "L", or "N"
+String prevKeyState = ""; // key pressed in the last loop cycle
+
+//-------------------------CALLING LCD PRINT
+String line0 = ""; // string to be printed on the first row on the lcd screen
+String line1 = ""; // string to be printed on the second row on the lcd screen
+
+//-------------------------MENU SYSTEM
+int menuIntro = 0; // inital switch state of menuMain
+int curMenuArray = 0;
+int curMenuItem = 0;
+String menuMainString[] = {"List alarms", "Set time", "Reset wheel", "Sound", "Shamoun!", "GK elak"};
+String menuAlarmString[] = {"08:00", "12:30", "15:00", "18:45"};
+String menuSoundString[] = {"Sound off", "Sound on"};
+int leng = 0;
+
+// SCREEN SAVE
+int counter = 0;
+
+// SOUND TOGGLE
+byte soundOn = 0;
 
 
 //////////////////////////////////////////////////////////////////////////////
@@ -16,7 +46,7 @@ MenuLCD menuLCD(9,8,7,6,5,4, A0);
 
 
 
-const int buzzerPin = 10;
+const byte buzzerPin = 10;
 
 
 
@@ -28,20 +58,10 @@ void setup() {
   while (!Serial) ; // wait for Arduino Serial Monitor
   delay(200);
 
-
-
-  readSD.getNextAlarm();
-  Serial.println("nextAlarmTime = "+readSD.getNextAlarmTime());
-  Serial.println("nextAlarmContent = "+readSD.getNextAlarmContent());
-
-
-  
-  
-
-
-  // initial buzzer setup, PLZ HAVE IT OFF BY DEFAULT
   pinMode(buzzerPin, OUTPUT); 
   digitalWrite(buzzerPin, 0);
+
+  menuLCD.printLCD("  WELCOME TO", "ROSETTEN");
 
 }
 
@@ -49,14 +69,25 @@ void setup() {
 //////////////////////////////////////////////////////////////////////////////
 //////////////////////////        LOOP         ///////////////////////////////
 void loop() {
-  digitalWrite(buzzerPin, menuLCD.getSoundOn());
+  digitalWrite(buzzerPin, soundOn);
 
 
-  menuLCD.updateMenu();
+  /////////////////////////////////////////
+  /////////////////////   MENU     ////////
+  keyState = menuLCD.readKBD();
 
+  if (counter % 4000 == 0) {
+    //String line1 = "Next alarm " + nextAlarmTime;
+    //menuLCD.printLCD(readSD.getTime(), line1);
+
+    String line1 = "Next alarm: 17:23";
+    //menuLCD.printLCD(readSD.getTime(), line1);
+    menuLCD.printLCD("hej", "kth skrap");
+    curMenuItem = 0;
+  }
+  counter++;
   
 }
-
 
 //////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////

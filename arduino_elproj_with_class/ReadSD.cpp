@@ -12,8 +12,8 @@
 String alarmFile = "alarms.txt";
 
 // ALARM
-String nextAlarmTime = "";
-String nextAlarmContent = "";
+String _nextAlarmTime = "";
+String _nextAlarmContent = "";
 
 //time struct
 tmElements_t tm;
@@ -55,7 +55,7 @@ void ReadSD::getNextAlarm(){
   
   String SDString = readFromSD(alarmFile);
   String tempTime = "";
-  String nextAlarmTime = "23:59"; // last possible time
+  String _nextAlarmTime = "23:59"; // last possible time
   String nextAlarmContent = "";
 
   
@@ -64,10 +64,10 @@ void ReadSD::getNextAlarm(){
       //compare times
       tempTime.trim();
 
-      if(tempTime > getTime() && tempTime < nextAlarmTime){ //"smallest" time AFTER current time
-        nextAlarmTime = tempTime;
-        nextAlarmContent = SDString.substring(i+1,SDString.substring(i+1).indexOf(';')+i+1);
-        i += sizeof(nextAlarmContent);
+      if(tempTime > getTime() && tempTime < _nextAlarmTime){ //"smallest" time AFTER current time
+        _nextAlarmTime = tempTime;
+        _nextAlarmContent = SDString.substring(i+1,SDString.substring(i+1).indexOf(';')+i+1);
+        i += sizeof(_nextAlarmContent);
       }
      }
      else if(SDString[i] == ';'){
@@ -83,11 +83,11 @@ void ReadSD::getNextAlarm(){
 ///////////////////////////////////////////////////////////////////////////////////
 /////////////////////////////////// GETTERS ///////////////////////////////////////
 String ReadSD::getNextAlarmTime() {
-  return nextAlarmTime;
+  return _nextAlarmTime;
 }
 
 String ReadSD::getNextAlarmContent() {
-  return nextAlarmContent;
+  return _nextAlarmContent;
 }
 
 

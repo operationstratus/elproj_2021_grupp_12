@@ -8,7 +8,7 @@ void setup() {
   // Declare pins as output:
   pinMode(stepPin, OUTPUT);
   pinMode(dirPin, OUTPUT);
-  for(int i = 0; i < 8; i++){
+  for(int i = 0; i < 24; i++){
     dispense();
     delay(1000);
   }
@@ -70,7 +70,7 @@ void loop() {
 
 void dispense(){
   // Set the spinning direction clockwise:
-  digitalWrite(dirPin, LOW);
+  digitalWrite(dirPin, HIGH);
   // Spin the stepper motor 1 revolution slowly:
   for (int i = 0; i < (stepsPerRevolution)/8; i++) {
     // These four lines result in 1 step:
