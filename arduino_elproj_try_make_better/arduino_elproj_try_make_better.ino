@@ -11,7 +11,6 @@ LiquidCrystal lcd(9,8,7,6,5,4); // generates an instance in the lcd
 //-------------------------READING KEYBOARD
 const byte kbdPin = A0;
 int kbdIn = 0; // pin for the keyboard
-char returnStr; // variable used inside readKBD() function
 char keyState; // current key pressed: "E", "U", "D", "R", "L", or "N"
 char prevKeyState; // key pressed in the last loop cycle
 
@@ -490,28 +489,6 @@ String readFromSD(String fileName){
   }
 }
 
-/* not used
-//writes content+delimiter to fileName on SD card
-//previous content is deleted
-void writeToSD(String fileName, String content){
-  content += '#';
-  SD.begin(chipSelect);
-  //if file exists it is deleted to wipe content
-  if(SD.exists(fileName)) SD.remove(fileName);
-  File writeFile = SD.open(fileName, FILE_WRITE);
-  if(writeFile){
-    for(int i = 0; i < content.length(); i++ ) {
-      writeFile.print(content[i]);
-      //Making sure file isn't written to with duplicates, workaround for problem
-      if(content[i] == '#') break;
-    }
-  }
-  else {
-    Serial.println("Err: cannot open file (write): "+fileName);
-  }
-  writeFile.close();
-}
-*/
 //sets the time in tm and resets the second to 0
 //these values are then sent to the RTC
 bool setRTC(int newHour, int newMin){
@@ -526,15 +503,7 @@ bool setRTC(int newHour, int newMin){
     return false;
   }
 }
-/*
-//gets the time from the RTC and updates tm
-bool pollRTC(){
-  if (RTC.read(tm)) {
-    return true;
-  }
-  else return false;
-}
-*/
+
 //returns a String in the format hh:MM
 //leading zeros added to numbers n<10
 String getTime(){
