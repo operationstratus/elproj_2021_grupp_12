@@ -285,6 +285,13 @@ void updateMenu(){
       break;
 
       case 2:
+        timeMenu();
+        curMenuArray = 0;
+        curMenuItem = 0;
+        changedMenu = 0;
+      break;
+
+      case 4:
         menuLeng = sizeof(menuSoundString)/sizeof(menuSoundString[0]); // calculate the length of a menuArray
         if (keyState == 'U' && curMenuItem > 0) {
           curMenuItem--;
@@ -303,5 +310,79 @@ void updateMenu(){
         }
       break;
     }
+  }
+}
+
+
+void timeMenu() {
+  bool firstRun = true;
+  byte tim[] = {0,0};
+  byte modArr[] = {24, 60};
+  byte menuIndex = 0;
+  String line1(16), line2(16);
+  while (true) {
+    updateKBD();
+    if (firstRun or keyState != prevKeyState){
+      firstRun = false;
+      if (menuIndex < 2) { //pointer is on hh or mm
+        if(keyState == 'U'){
+          tim[menuIndex] ++;
+          tim[menuIndex] = tim[menuIndex]%modArr[menuIndex];//count up
+        }
+        if(keyState == 'D'){
+          if (tim[menuIndex] != 0) {
+            tim[menuIndex] --;
+            tim[menuIndex] = tim[menuIndex]%modArr[menuIndex];//count down
+          }
+          else {
+            tim[menuIndex] = modArr[menuIndex]-1;
+          }
+        }
+      }
+      if (keyState == 'R'){
+        menuIndex += 1;
+      }
+      if (keyState == 'L' && menuIndex > 0){
+        menuIndex -= 1;
+      }
+      String timeString; //build timeString
+      if (tim[0]%modArr[0] < 10) timeString += '0';
+      timeString += String(tim[0])+':';
+      if (tim[1]%modArr[1] < 10) timeString += '0';
+      timeString += String(tim[1]);
+      
+      if (menuIndex == 3) { //user pressed R when on OK
+        setRTC(tim[0], tim[1]);
+        break;
+      }
+      if (keyState != 'N') { //only update LCD if button has been pressed
+        line1 = timeString+String(F(" OK"));
+        line2 = "";
+        for (byte i = 0; i < menuIndex; i+=1) {
+          for (byte j = 0; j < 3; j+=1) {
+            line2 += ' ';
+          }
+        }
+        line2 = line2 + '^' + '^';
+        printLCD(line1, line2);
+      }
+      prevKeyState = keyState;
+    }
+  }
+}
+
+
+//sets the time in tm and resets the second to 0
+//these values are then sent to the RTC
+bool setRTC(int newHour, int newMin){
+  tmElements_t tm;
+  tm.Hour = newHour;
+  tm.Minute = newMin;
+  tm.Second = 0;
+  if (RTC.write(tm)) {
+      return true;
+    }
+  else {
+    return false;
   }
 }
