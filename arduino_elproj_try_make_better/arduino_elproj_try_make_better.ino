@@ -247,7 +247,7 @@ void updateMenu() {
     if (keyState != prevKeyState && keyState != 'N') {
       soundMenu();
     }
-    break;
+    break;c
   }
   prevKeyState = keyState;
   counter ++;
