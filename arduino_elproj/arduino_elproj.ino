@@ -12,9 +12,8 @@ LiquidCrystal lcd(9,8,7,6,5,4); // generates an instance in the lcd
 
 //-------------------------READING KEYBOARD
 const byte kbdPin = A0;
-String returnStr = ""; // variable used inside updateKBD() function
-String keyState = ""; // current key pressed: "E", "U", "D", "R", "L", or "N"
-String prevKeyState = ""; // key pressed in the last loop cycle
+char keyState = 'N'; // current key pressed: "E", "U", "D", "R", "L", or "N"
+char prevKeyState = 'N'; // key pressed in the last loop cycle
 
 //-------------------------CALLING LCD PRINT
 String line0 = ""; // string to be printed on the first row on the lcd screen
@@ -61,6 +60,7 @@ const int buzzerPin = 10;
 
 // SCREEN SAVE
 int counter = 0;
+const byte screenSaverTime = 50000;
 
 
 // ALARM
@@ -122,10 +122,11 @@ void setup() {
 void loop() {
   digitalWrite(buzzerPin, soundOn);
 
-  ///////////////////////////////////////////////////// LOOP MENU
   updateKBD();
+
+  ///////////////////////////////////////////////////// LOOP MENU
   //---------------------------------------SCREEN SAVER
-  if (counter % 4000 == 0) {
+  if (counter % screenSaverTime == 0) {
     //String line1 = "Next alarm " + nextAlarmTime;
     //myLCDprint(getTime(), line1);
     printLCD("     13:37", "Next Alarm 69:69");
@@ -133,29 +134,39 @@ void loop() {
   }
 
   
-  if (keyState != prevKeyState && keyState != "N"){
-      menuWrite(menuMainString);
-    counter = 0;
+  if (keyState != prevKeyState && keyState != 'N'){
+    menuWrite(menuMainString);
+    Serial.println("pressed new: "+String(keyState));
     
-    menuLeng = sizeof(menuMainString)/sizeof(menuMainString[0]);
+    counter = 0; // reset screen time
     
-    if (keyState == "U" && curMenuItem > 0) {
-      curMenuItem -= 1;
-      menuWrite(menuMainString);
-      Serial.println("pressed: "+keyState);
-    } else if (keyState == "D" && curMenuItem < menuLeng-1) {
-      curMenuItem += 1;
-      //Serial.println(curMenuItem);
-      menuWrite(menuMainString);
-      Serial.println("pressed: "+keyState);
-    } else if (keyState == "R") {
-      Serial.println("pressed: "+keyState);
-      curMenuArray = curMenuItem+1;
-      curMenuItem = 0;
-      keyState = "N";
-      updateMenu();
+    menuLeng = sizeof(menuMainString)/sizeof(menuMainString[0]); // calculate the length of a menuArray
+    
+
+    switch(keyState) {
+      case 'U':
+      if (curMenuItem > 0) Serial.println("Go up!");
+      break;
+      
+      case 'D':
+      if (curMenuItem < menuLeng-1) menuWrite(menuMainString);
+      break;
+
+      case 'R':
+      printLCD("YOU PRESSED", "RIGHT");
+      break;
     }
   }
+
+
+  ///////////////////////////////////////////////////// UPDATES AT END OF LOOP
+  counter++;
+  prevKeyState = keyState;
+
+
+
+
+  
   
 
   
@@ -181,6 +192,7 @@ void loop() {
 //////////////////////////      FUNC MENU     ///////////////////////////////
 
 void menuWrite(String menu[]) {
+
   line0 = ">" + menu[0+curMenuItem];
   if (curMenuItem < menuLeng-1){
     line1 = " " + menu[1+curMenuItem];
@@ -221,17 +233,16 @@ void updateKBD() {
             // Down: 25-40
   
   if (345 < kbdIn && kbdIn < 360) {
-    returnStr = "E";
+    keyState = 'E';
   } else if (164 < kbdIn && kbdIn < 175) {
-    returnStr = "L";
+    keyState = 'L';
   } else if (0 < kbdIn && kbdIn < 10) {
-    returnStr = "R";
+    keyState = 'R';
   } else if (85 < kbdIn && kbdIn < 95) {
-    returnStr = "U";
+    keyState = 'U';
   } else if (25 < kbdIn && kbdIn < 40) {
-    returnStr = "D";
+    keyState = 'D';
   } else if (kbdIn == 1023) {
-    returnStr = "N";
+    keyState = 'N';
   }
-  keyState = returnStr; 
 }
