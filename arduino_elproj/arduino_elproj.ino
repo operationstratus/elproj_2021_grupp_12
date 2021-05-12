@@ -42,9 +42,6 @@ int menuLeng = 0;
 #include <TimeLib.h>
 #include <DS1307RTC.h>
 
-//time struct
-tmElements_t tm;
-
 //files
 char alarmFile[] = "alarms.txt";
 
@@ -291,5 +288,160 @@ void updateMenu(){
         }
       break;
     }
+  }
+}
+
+///////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////////
+/////////////////////// FUNCTIONS FOR SD, ALARM, CLOCK/////////////////////////////
+
+
+//checks all alarms on SD card and selects the next alarm to be executed
+//nextAlarmTime is set as next alarm and accompanying string is set in nextAlarmContent
+void getNextAlarm(String alarmString){
+  String tempTime = "";
+  nextAlarmTime = "23:59";
+  Serial.println(alarmString);
+  for(int i = 0; i < alarmString.length(); i++ ) {
+     if(alarmString[i] == '?'){
+      //compare times
+      tempTime.trim();
+      Serial.println(tempTime+" "+getTime()+" "+nextAlarmTime);
+      if(tempTime > getTime() && tempTime < nextAlarmTime){ //"smallest" time AFTER current time
+        nextAlarmTime = tempTime;
+        nextAlarmContent = alarmString.substring(i+1,alarmString.substring(i+1).indexOf(';')+i+1);
+      }
+     }
+     else if(alarmString[i] == ';'){
+      tempTime = "";
+     }
+     else {
+      tempTime += alarmString[i];
+     }
+  }
+  //Serial.println("#"+nextAlarmTime+"#");
+  //Serial.println("#"+nextAlarmContent+"#");
+}
+/* //denna ska fixas
+string getAlarmInfo(char alarmfile[]){
+  String alarmString = readFromSD(alarmFile);
+  byte nrOfLines = 0;
+  for(int i = 0; i < alarmString.length(); i++ ) {
+    if(alarmString[i] == ';'){
+      nrOfLines ++;
+    }
+  }
+  char *pointer[nrOfLines];
+  int index = 0;
+  String temp;
+  for(int i = 0; i < nrOfLines; i++ ) {
+    //set pointer of line i to content of line i in format 'hh:MM?ttt...t;'
+    *pointer[i] = alarmString.subString(index, alarmString.substring(index+1).indexOf(';'));
+  }
+  for(int i = 0; i < nrOfLines; i++ ) {
+    Serial.println(*pointer[i]);
+  }
+}
+*/
+//activates the alarm and then calls getNextAlarm() after alarm has been deactivated
+void alarm(){
+  Serial.println(String(F("Alarm!")));
+  if(nextAlarmContent == '1'){
+    dispense();
+  } else {
+    myLCDprint(String(F("Take your meds!")), "");
+    //myLCDprint(nextAlarmContent, "");
+  }
+  while(keyState != 'E'){
+    // test
+    readKBD();
+    digitalWrite(buzzerPin, soundOn);
+    
+  }
+  digitalWrite(buzzerPin, LOW);
+  menuWrite(menuMainString);
+  getNextAlarm(alarmFile);
+}
+
+//reads fileName from SD card without delimiter
+//returns result as String built from individual characters from the SD card
+String readFromSD(String fileName){
+  Serial.println(String(F("ATTEMPTING CARD READ")));
+  SD.begin(chipSelect);
+  File readFile = SD.open(fileName);
+  if(readFile){
+    String res = "";
+    while(readFile.available()){
+      char nextChar = char(readFile.read());
+      //EOF is reached
+      if(nextChar == '#'){
+        break;
+      }
+      res += nextChar;
+    }
+    readFile.close();
+    return res;
+  }
+  else{
+    Serial.println(String(F("Err: cannot open file (read): "))+fileName);
+  }
+}
+
+//sets the time in tm and resets the second to 0
+//these values are then sent to the RTC
+bool setRTC(int newHour, int newMin){
+  tmElements_t tm;
+  tm.Hour = newHour;
+  tm.Minute = newMin;
+  tm.Second = 0;
+  if (RTC.write(tm)) {
+      return true;
+    }
+  else {
+    return false;
+  }
+}
+
+//returns a String in the format hh:MM
+//leading zeros added to numbers n<10
+String getTime(){
+  tmElements_t tm;
+  if(!RTC.read(tm)){
+    if (RTC.chipPresent()) {
+      //initialize clock
+      if(!setRTC){
+        Serial.println(String(F("ERR: RTC present but can't be set")));
+      }
+    } else {
+      Serial.println(String(F("ERR: RTC not present")));
+      return;
+    }
+  }
+  else {
+    //handle leading zeros and return
+    String tempHour = String(tm.Hour);
+    if (tm.Hour < 10) tempHour = '0'+tempHour;
+    String tempMinute = String(tm.Minute);
+    if (tm.Minute < 10) tempMinute = '0'+tempMinute;
+    return tempHour+':'+tempMinute;
+  }
+}
+
+
+
+///////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////////
+/////////////////////// FUNCTIONS FOR STEPPER MOTOR   /////////////////////////////
+
+void dispense(){
+  // Set the spinning direction clockwise:
+  digitalWrite(dirPin, HIGH);
+  // Spin the stepper motor 1 revolution slowly:
+  for (int i = 0; i < (stepsPerRevolution)/8; i++) {
+    // These four lines result in 1 step:
+    digitalWrite(stepPin, HIGH);
+    delayMicroseconds(stepDelay);
+    digitalWrite(stepPin, LOW);
+    delayMicroseconds(stepDelay);
   }
 }
