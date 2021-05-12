@@ -42,15 +42,17 @@ SdFile root;
 // Sparkfun SD shield: pin 8
 // MKRZero SD: SDCARD_SS_PIN
 
-const int chipSelect = 10;
 
 void setup() {
 
   // Open serial communications and wait for port to open:
   Serial.begin(9600);
   while (!Serial) {
-    ; // wait for serial port to connect. Needed for native USB port only
+    delay(10); // wait for serial port to connect. Needed for native USB port only
   }
+
+  Serial.begin("test");
+
   /*
   Serial.print("\nInitializing SD card...");
   // we'll use the initialization code from the utility libraries
@@ -61,9 +63,7 @@ void setup() {
   } else {
     Serial.println("SD card connected");
   }
-  */
   
-  /*
   // print the type of card
   Serial.println();
   Serial.print("Card type:         ");
@@ -129,7 +129,7 @@ void setup() {
 
 String readFromSD(String fileName){
   Serial.println("ATTEMPTING CARD READ");
-  SD.begin(chipSelect);
+  SD.begin();
   File readFile = SD.open(fileName);
   if(readFile){
     String res = "";
@@ -151,7 +151,7 @@ String readFromSD(String fileName){
 
 void writeToSD(String fileName, String content){
   content += '#';
-  SD.begin(chipSelect);
+  SD.begin();
   SD.remove(fileName);
   File writeFile = SD.open(fileName, FILE_WRITE);
   if(writeFile){

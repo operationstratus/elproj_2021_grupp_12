@@ -1,3 +1,4 @@
+
 //////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////
 ////////////////////// SCREEN AND MENU SYSTEM ////////////////////////////////
@@ -8,24 +9,24 @@ LiquidCrystal lcd(9,8,7,6,5,4); // generates an instance in the lcd
 //LiquidCrystal lcd(12,11,5,4,3,2); // ORIGINAL CALL OF THE CLASS
 
 //-------------------------READING KEYBOARD
-const int kbdPin = A0;
+const byte kbdPin = A0;
 int kbdIn = 0; // pin for the keyboard
-String returnStr = ""; // variable used inside readKBD() function
-String keyState = ""; // current key pressed: "E", "U", "D", "R", "L", or "N"
-String prevKeyState = ""; // key pressed in the last loop cycle
+char returnStr; // variable used inside readKBD() function
+char keyState; // current key pressed: "E", "U", "D", "R", "L", or "N"
+char prevKeyState; // key pressed in the last loop cycle
 
 //-------------------------CALLING LCD PRINT
-String line0 = ""; // string to be printed on the first row on the lcd screen
-String line1 = ""; // string to be printed on the second row on the lcd screen
+String line0(16); // string to be printed on the first row on the lcd screen
+String line1(16); // string to be printed on the second row on the lcd screen
 
 //-------------------------MENU SYSTEM
-int menuIntro = 0; // inital switch state of menuMain
-int curMenuArray = 0;
-int curMenuItem = 0;
-String menuMainString[] = {"List alarms", "Set time", "Reset wheel", "Sound", "Shamoun!", "GK elak"};
-String menuAlarmString[] = {"08:00", "12:30", "15:00", "18:45"};
-String menuSoundString[] = {"Sound off", "Sound on"};
-int leng = 0;
+byte menuIntro = 0; // inital switch state of menuMain
+byte curMenuArray = 0;
+byte curMenuItem = 0;
+char menuMainString[][11] = {"List alarms", "Set time", "Reset wheel", "Sound"};
+char menuAlarmString[][11] = {"08:00", "12:30", "15:00", "18:45"};
+char menuSoundString[][11] = {"Sound off", "Sound on"};
+byte leng = 0;
 
 
 //////////////////////////////////////////////////////////////////////////////
@@ -41,20 +42,20 @@ int leng = 0;
 #include <DS1307RTC.h>
 
 //time struct
-tmElements_t tm;
+//tmElements_t tm;
 
 //files
-String alarmFile = "alarms.txt";
+char alarmFile[] = "alarms.txt";
 
 //variable wires
-const int chipSelect = 10;
+const byte chipSelect = 10;
 
 //variables
 String nextAlarmTime = "";
 String nextAlarmContent = "";
 
 //Buzzer
-const int buzzerPin = 10;
+const byte buzzerPin = 10;
 
 
 // SCREEN SAVE
@@ -62,7 +63,7 @@ int counter = 0;
 
 
 // ALARM
-int soundOn = 1;
+byte soundOn = 1;
 
 
 //////////////////////////////////////////////////////////////////////////////
@@ -76,6 +77,24 @@ int soundOn = 1;
 #define stepsPerRevolution 200*2 // times two since we have enabled half stepping
 #define stepDelay 5000
 
+#ifdef __arm__
+// should use uinstd.h to define sbrk but Due causes a conflict
+extern "C" char* sbrk(int incr);
+#else  // __ARM__
+extern char *__brkval;
+#endif  // __arm__
+ 
+int freeMemory() {
+  char top;
+#ifdef __arm__
+  return &top - reinterpret_cast<char*>(sbrk(0));
+#elif defined(CORE_TEENSY) || (ARDUINO > 103 && ARDUINO != 151)
+  return &top - __brkval;
+#else  // __arm__
+  return __brkval ? &top - __brkval : &top - __malloc_heap_start;
+#endif  // __arm__
+}
+
 
 //////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////
@@ -88,7 +107,8 @@ void setup() {
 
   // INIT THE ALARM AND SD
   //setRTC(15,4); // not needed anymore
-  getNextAlarm();
+  //getAlarmInfo(alarmFile);
+  //getNextAlarm();
   pinMode(buzzerPin, OUTPUT);
   digitalWrite(buzzerPin, LOW);
 
@@ -106,9 +126,11 @@ void setup() {
 
 
   //??? // TESTS
-  setRTC(17, 4);
-  getNextAlarm();
+  setRTC(19, 4);
+  getNextAlarm(alarmFile);
   //Alarm();
+
+  timeMenu();
 
 }
 
@@ -126,21 +148,30 @@ void loop() {
   //Serial.println("getTime: "+getTime()+" nextAlarmTime: "+nextAlarmTime);
   if(getTime() == nextAlarmTime) alarm();
   //delay(1000);
+
+  //Serial.println(String(F("Free ram: "))+String(freeMemory()));
 }
-
-
 
 ///////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////
 /////////////////////// FUNCTIONS FOR SCREEN AND MENU /////////////////////////////
 
 
-void menuWrite(String menu[]) {
-  //--------------------------------WRITE THE MENUE
+void menuWrite(char menu[][11]) {
+  //--------------------------------WRITE THE MENU
   //Serial.println(curMenuItem);
-  line0 = ">" + menu[0+curMenuItem];
+  byte index;
+  for(byte i=0; i < 11; i++){
+    if (menu[0+curMenuItem] != "") index = i;
+  }
+  String temp = String(menu[0+curMenuItem]).substring(0,index+1);
+  line0 = ">" + temp;
+  for(byte i=0; i < 11; i++){
+    if (menu[1+curMenuItem] != "") index = i;
+  }
+  temp = String(menu[1+curMenuItem]).substring(0,index+1);
   if (curMenuItem < leng-1){
-    line1 = " " + menu[1+curMenuItem];
+    line1 = " " + temp;
   } else {
     line1 = " ";
   }
@@ -161,7 +192,7 @@ void myLCDprint(String line0, String line1) {
 void readKBD() {
   // ----------------------------------------READ KEYBOARD
   kbdIn = analogRead(kbdPin);
-  // Serial.println(kbdIn);
+  //Serial.println(kbdIn);
   /* Configuration:
    *               Up
    * Enter    Left    Right
@@ -176,19 +207,18 @@ void readKBD() {
    * Down: 25-40
   */
   
-
   if (345 < kbdIn && kbdIn < 360) {
-    returnStr = "E";
+    returnStr = 'E';
   } else if (164 < kbdIn && kbdIn < 175) {
-    returnStr = "L";
-  } else if (0 < kbdIn && kbdIn < 10) {
-    returnStr = "R";
+    returnStr = 'L';
+  } else if (0 <= kbdIn && kbdIn < 10) {
+    returnStr = 'R';
   } else if (85 < kbdIn && kbdIn < 95) {
-    returnStr = "U";
+    returnStr = 'U';
   } else if (25 < kbdIn && kbdIn < 40) {
-    returnStr = "D";
+    returnStr = 'D';
   } else if (kbdIn == 1023) {
-    returnStr = "N";
+    returnStr = 'N';
   }
   keyState = returnStr;
 }
@@ -197,27 +227,25 @@ void readKBD() {
 void updateMenu() {
   ///////////////////////////////////////////////////// LOOP MENU AND KBD
   readKBD(); // updates the keyState value
-  
-  if (counter % 4000 == 0) {
-    String line1 = "Next alarm " + nextAlarmTime;
+  if (counter % 400 == 0) {
+    String line1 = String(F("Next alarm ")) + nextAlarmTime;
     myLCDprint(getTime(), line1);
     curMenuItem = 0;
   }
   //Serial.println("curMenuArray = "+ String(curMenuArray));
-
   switch(curMenuArray) {
     case 0:
-    if (keyState != prevKeyState && keyState != "N"){
+    if (keyState != prevKeyState && keyState != 'N'){
       mainMenu();
     }
     break;
     case 1:
-    if (keyState != prevKeyState && keyState != "N") {
+    if (keyState != prevKeyState && keyState != 'N') {
       alarmMenu();
     }
     break;
     case 2:
-    if (keyState != prevKeyState && keyState != "N") {
+    if (keyState != prevKeyState && keyState != 'N') {
       soundMenu();
     }
     break;
@@ -233,20 +261,20 @@ void mainMenu() {
     leng = sizeof(menuMainString)/sizeof(menuMainString[0]);
     
     //Serial.println(keyState);
-    if (keyState == "U" && curMenuItem > 0) {
+    if (keyState == 'U' && curMenuItem > 0) {
       curMenuItem -= 1;
       menuWrite(menuMainString);
-      Serial.println("pressed: "+keyState);
-    } else if (keyState == "D" && curMenuItem < leng-1) {
+      Serial.println(String(F("pressed: "))+keyState);
+    } else if (keyState =='D' && curMenuItem < leng-1) {
       curMenuItem += 1;
       //Serial.println(curMenuItem);
       menuWrite(menuMainString);
-      Serial.println("pressed: "+keyState);
-    } else if (keyState == "R") {
-      Serial.println("pressed: "+keyState);
+      Serial.println(String(F("pressed: "))+keyState);
+    } else if (keyState == 'R') {
+      Serial.println(String(F("pressed: "))+keyState);
       curMenuArray = curMenuItem+1;
       curMenuItem = 0;
-      keyState = "N";
+      keyState = 'N';
       updateMenu();
     }
 }
@@ -257,24 +285,17 @@ void alarmMenu() {
   leng = sizeof(menuAlarmString)/sizeof(menuAlarmString[0]);
   
   //Serial.println(keyState);
-  if (keyState == "U" && curMenuItem > 0) {
+  if (keyState == 'U' && curMenuItem > 0) {
     curMenuItem -= 1;
     menuWrite(menuAlarmString);
   }
-  if (keyState == "D" && curMenuItem < leng-1) {
+  if (keyState == 'D' && curMenuItem < leng-1) {
     curMenuItem += 1;
     menuWrite(menuAlarmString);
-    Serial.println("pressed: "+keyState);
+    Serial.println(String(F("pressed: "))+keyState);
   }
-  if (keyState == "E") {
-    Serial.println("pressed: "+keyState);
-    curMenuArray = 0;
-    curMenuItem = 0;
-    updateMenu();
-    exit;
-  }
-  if (keyState == "L") {
-    Serial.println("pressed: "+keyState);
+  if (keyState == 'E' || keyState == 'L') {
+    Serial.println(String(F("pressed: "))+keyState);
     curMenuArray = 0;
     curMenuItem = 0;
     updateMenu();
@@ -284,7 +305,7 @@ void alarmMenu() {
 
 void soundMenu() {
   
-  Serial.println("NUUUUUUU IIIIIII SOOOOOUUUND, keystate="+keyState);
+  Serial.println(String(F("NUUUUUUU IIIIIII SOOOOOUUUND, keystate="))+keyState);
 
   counter = 0;
   menuWrite(menuSoundString);
@@ -292,28 +313,82 @@ void soundMenu() {
   leng = sizeof(menuSoundString)/sizeof(menuSoundString[0]);
   
   //Serial.println(keyState);
-  if (keyState == "U" && curMenuItem > 0) {
+  if (keyState == 'U' && curMenuItem > 0) {
     curMenuItem -= 1;
     menuWrite(menuSoundString);
-  } else if (keyState == "D" && curMenuItem < leng-1) {
+  } else if (keyState == 'D' && curMenuItem < leng-1) {
     curMenuItem += 1;
     menuWrite(menuSoundString);
-    Serial.println("pressed: "+keyState);
-  } else if (keyState == "E") {
-    Serial.println("pressed: "+keyState);
+    Serial.println(String(F("pressed: "))+keyState);
+  } else if (keyState == 'E') {
+    Serial.println(String(F("pressed: "))+keyState);
     soundOn = curMenuItem;
-    Serial.println("soundOn = "+String(soundOn));
+    Serial.println(String(F("soundOn = "))+String(soundOn));
     curMenuArray = 0;
     curMenuItem = 0;
     updateMenu();
     exit;
-  } else if (keyState == "L") {
-    Serial.println("pressed: "+keyState);
+  } else if (keyState == 'L') {
+    Serial.println(String(F("pressed: "))+keyState);
     curMenuArray = 0;
     curMenuItem = 0;
     updateMenu();
     exit;
   }
+}
+
+void timeMenu() {
+  byte tim[] = {0,0};
+  byte modArr[] = {24, 60};
+  byte menuIndex = 0;
+  String line1(16), line2(16);
+  while (true) {
+    readKBD();
+    if (keyState != prevKeyState){
+    if (menuIndex < 2) { //pointer is on hh or mm
+      if(keyState == 'U'){
+        tim[menuIndex] ++;
+        tim[menuIndex] = tim[menuIndex]%modArr[menuIndex];//count up
+      }
+      if(keyState == 'D'){
+        if (tim[menuIndex] != 0) {
+          tim[menuIndex] --;
+          tim[menuIndex] = tim[menuIndex]%modArr[menuIndex];//count down
+        }
+        else {
+          tim[menuIndex] = modArr[menuIndex]-1;
+        }
+      }
+    }
+    if (keyState == 'R'){
+      menuIndex += 1;
+    }
+    if (keyState == 'L' && menuIndex > 0){
+      menuIndex -= 1;
+    }
+    String timeString; //build timeString
+    if (tim[0]%modArr[0] < 10) timeString += '0';
+    timeString += String(tim[0])+':';
+    if (tim[1]%modArr[1] < 10) timeString += '0';
+    timeString += String(tim[1]);
+    
+    if (menuIndex == 3) { //user pressed R when on OK
+      setRTC(tim[0], tim[1]);
+      break;
+    }
+    if (keyState != 'N') { //only update LCD if button has been pressed
+      line1 = timeString+String(F(" OK"));
+      line2 = "";
+      for (byte i = 0; i < menuIndex; i+=1) {
+        for (byte j = 0; j < 3; j+=1) {
+          line2 += ' ';
+        }
+      }
+      line2 = line2 + '^' + '^';
+      myLCDprint(line1, line2);
+    }
+    prevKeyState = keyState;
+  }}
 }
 
 
@@ -326,8 +401,7 @@ void soundMenu() {
 
 //checks all alarms on SD card and selects the next alarm to be executed
 //nextAlarmTime is set as next alarm and accompanying string is set in nextAlarmContent
-void getNextAlarm(){
-  String alarmString = readFromSD(alarmFile);
+void getNextAlarm(String alarmString){
   String tempTime = "";
   nextAlarmTime = "23:59";
   Serial.println(alarmString);
@@ -348,20 +422,40 @@ void getNextAlarm(){
       tempTime += alarmString[i];
      }
   }
-  Serial.println("#"+nextAlarmTime+"#");
-  Serial.println("#"+nextAlarmContent+"#");
+  //Serial.println("#"+nextAlarmTime+"#");
+  //Serial.println("#"+nextAlarmContent+"#");
 }
-
+/*
+string getAlarmInfo(char alarmfile[]){
+  String alarmString = readFromSD(alarmFile);
+  byte nrOfLines = 0;
+  for(int i = 0; i < alarmString.length(); i++ ) {
+    if(alarmString[i] == ';'){
+      nrOfLines ++;
+    }
+  }
+  char *pointer[nrOfLines];
+  int index = 0;
+  String temp;
+  for(int i = 0; i < nrOfLines; i++ ) {
+    //set pointer of line i to content of line i in format 'hh:MM?ttt...t;'
+    *pointer[i] = alarmString.subString(index, alarmString.substring(index+1).indexOf(';'));
+  }
+  for(int i = 0; i < nrOfLines; i++ ) {
+    Serial.println(*pointer[i]);
+  }
+}
+*/
 //activates the alarm and then calls getNextAlarm() after alarm has been deactivated
 void alarm(){
-  Serial.println("Alarm!");
-  if(nextAlarmContent == "1"){
+  Serial.println(String(F("Alarm!")));
+  if(nextAlarmContent == '1'){
     dispense();
   } else {
-    myLCDprint("Take your meds!", "");
+    myLCDprint(String(F("Take your meds!")), "");
     //myLCDprint(nextAlarmContent, "");
   }
-  while(keyState != "E"){
+  while(keyState != 'E'){
     // test
     readKBD();
     digitalWrite(buzzerPin, soundOn);
@@ -369,13 +463,13 @@ void alarm(){
   }
   digitalWrite(buzzerPin, LOW);
   menuWrite(menuMainString);
-  getNextAlarm();
+  getNextAlarm(alarmFile);
 }
 
 //reads fileName from SD card without delimiter
 //returns result as String built from individual characters from the SD card
 String readFromSD(String fileName){
-  Serial.println("ATTEMPTING CARD READ");
+  Serial.println(String(F("ATTEMPTING CARD READ")));
   SD.begin(chipSelect);
   File readFile = SD.open(fileName);
   if(readFile){
@@ -392,10 +486,11 @@ String readFromSD(String fileName){
     return res;
   }
   else{
-    Serial.println("Err: cannot open file (read): "+fileName);
+    Serial.println(String(F("Err: cannot open file (read): "))+fileName);
   }
 }
 
+/* not used
 //writes content+delimiter to fileName on SD card
 //previous content is deleted
 void writeToSD(String fileName, String content){
@@ -416,13 +511,14 @@ void writeToSD(String fileName, String content){
   }
   writeFile.close();
 }
-
+*/
 //sets the time in tm and resets the second to 0
 //these values are then sent to the RTC
 bool setRTC(int newHour, int newMin){
+  tmElements_t tm;
   tm.Hour = newHour;
   tm.Minute = newMin;
-  tm.Second = 50;
+  tm.Second = 0;
   if (RTC.write(tm)) {
       return true;
     }
@@ -430,7 +526,7 @@ bool setRTC(int newHour, int newMin){
     return false;
   }
 }
-
+/*
 //gets the time from the RTC and updates tm
 bool pollRTC(){
   if (RTC.read(tm)) {
@@ -438,18 +534,19 @@ bool pollRTC(){
   }
   else return false;
 }
-
+*/
 //returns a String in the format hh:MM
 //leading zeros added to numbers n<10
 String getTime(){
-  if(!pollRTC()){
+  tmElements_t tm;
+  if(!RTC.read(tm)){
     if (RTC.chipPresent()) {
       //initialize clock
       if(!setRTC){
-        Serial.println("ERR: RTC present but can't be set");
+        Serial.println(String(F("ERR: RTC present but can't be set")));
       }
     } else {
-      Serial.println("ERR: RTC not present");
+      Serial.println(String(F("ERR: RTC not present")));
       return;
     }
   }
