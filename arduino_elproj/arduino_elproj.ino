@@ -46,8 +46,8 @@ byte changedMenu = 0;
 //files
 char alarmFile[] = "alarms.txt";
 
-//variable wires
-const int chipSelect = 10;
+//variable wires. NO, GO AWAY!
+//const int chipSelect = 10;
 
 //variables
 char nextAlarmTime[] = "13:37";
@@ -59,7 +59,7 @@ const int buzzerPin = 10;
 
 // SCREEN SAVE
 const int screenSaverTime = 100000;
-int counter = screenSaverTime;
+int counter = screenSaverTime; //Va? varför?
 
 
 // ALARM
@@ -95,7 +95,8 @@ void setup() {
   // INIT THE LCD AND MENU VARS
   lcd.begin(16,2);
   //menuLeng = sizeof(menuMainString)/sizeof(menuMainString[0]); // calculate the lenght of the current menu array and write the initial menu
-  printLCD("   WELCOME TO", "    ROSETTEN");
+  //user welcome message on boot
+  printLCD(String(F("   WELCOME TO")), String(F("    ROSETTEN")));
 
 
   // INIT STEPPER MOTOR SYSTEM
@@ -109,7 +110,6 @@ void setup() {
   //getNextAlarm();
   //Alarm();
 
-  
   delay(1500);
 }
 
@@ -123,29 +123,13 @@ void loop() {
   updateKBD();
   updateMenu();
 
-  
-
-
   ///////////////////////////////////////////////////// UPDATES AT END OF LOOP
   counter++;
   prevKeyState = keyState;
-  
-
-
-
-
-  
-  
-
-  
-
-  
-
 
   ///////////////////////////////////////////////////// LOOP SD AND ALARM
   //Serial.println("getTime: "+getTime()+" nextAlarmTime: "+nextAlarmTime);
   //if(getTime() == nextAlarmTime) alarm();
-  
 }
 
 
@@ -154,7 +138,7 @@ void loop() {
 //////////////////////////////////////////////////////////////////////////////
 //////////////////////////      FUNCTIONS      ///////////////////////////////
 
-
+//supposed to be empty? Eller är det header för kommande?
 
 /////////////////////////////////////////////////////////////////////////////
 //////////////////////////      FUNC MENU     ///////////////////////////////
@@ -167,21 +151,22 @@ void menuWrite(char menu[][11]) {
     if (menu[0+curMenuItem] != "") index = i;
   }
   String temp = String(menu[0+curMenuItem]).substring(0,index+1);
-  line0 = ">" + temp;
+  line0 = '>' + temp;
   for(byte i=0; i < 11; i++){
     if (menu[1+curMenuItem] != "") index = i;
   }
   temp = String(menu[1+curMenuItem]).substring(0,index+1);
   if (curMenuItem < menuLeng-1){
-    line1 = " " + temp;
+    line1 = ' ' + temp;
   } else {
-    line1 = " ";
+    line1 = ' ';
   }
 
   //Serial.println("line0 = "+line0+"\nline1="+line1+"curMenuItem = "+curMenuItem+"\n\n");
   printLCD(line0, line1);
 }
 
+//prints the two Strings Line0 and Line1 to the LCD display in order
 void printLCD(String Line0, String Line1) {
   lcd.clear();
   lcd.setCursor(0,0);
@@ -193,9 +178,9 @@ void printLCD(String Line0, String Line1) {
 /////////////////////////////////////////////////////////////////////////////
 //////////////////////////      FUNC KBD      ///////////////////////////////
 
+//reads the analog value of the kbdPin to determin which button is pressed
+//assigns keyState a char value according to the kbdPin read value
 void updateKBD() {
-  // updates keyState
-  
   int kbdIn = analogRead(kbdPin);
   //Serial.println("kbdIn = "+String(kbdIn)); //debug
   
@@ -205,7 +190,7 @@ void updateKBD() {
             //              Down
             // -------------------------- 
             // Analog value of output:
-            // None: 1023
+            // None: 1023 (can vary a little, range is implemented)
             // Enter: 345-360
             // Left: 160-175
             // Right: 0-10
@@ -222,7 +207,7 @@ void updateKBD() {
     keyState = 'U';
   } else if (25 < kbdIn && kbdIn < 40) {
     keyState = 'D';
-  } else if (kbdIn == 1023) {
+  } else if (kbdIn >= 1000) {
     keyState = 'N';
   }
   delay(100);
@@ -234,15 +219,14 @@ void updateMenu(){
   if (counter % screenSaverTime == 0) {
     //String line1 = "Next alarm " + nextAlarmTime;
     //myLCDprint(getTime(), line1);
-    printLCD("     13:37", "Next Alarm 69:69");
+    printLCD(String(F("     13:37", "Next Alarm 69:69"))); //???change
     curMenuItem = 0;
   }
 
-  
   if (changedMenu or (keyState != prevKeyState and keyState != 'N')){
     changedMenu = 0;
 
-    Serial.println("pressed: "+String(keyState));
+    Serial.println(String(F("pressed: "))+String(keyState));
 
     counter = 0; // reset screen time counter
     switch(curMenuArray) {
@@ -314,14 +298,14 @@ void updateMenu(){
 ///////////////////////////////////////////////////////////////////////////////////
 /////////////////////// FUNCTIONS FOR SD, ALARM, CLOCK/////////////////////////////
 
-
+//??? GÖR OM ALL SKIT MED ALARM
 //checks all alarms on SD card and selects the next alarm to be executed
 //nextAlarmTime is set as next alarm and accompanying string is set in nextAlarmContent
 void getNextAlarm(String alarmString){
-  String tempTime = "";
+  String tempTime(5);
   nextAlarmTime = "23:59";
   Serial.println(alarmString);
-  for(int i = 0; i < alarmString.length(); i++ ) {
+  for(int i = 0; i < alarmString.length(); i++) {
      if(alarmString[i] == '?'){
       //compare times
       tempTime.trim();
@@ -341,6 +325,7 @@ void getNextAlarm(String alarmString){
   //Serial.println("#"+nextAlarmTime+"#");
   //Serial.println("#"+nextAlarmContent+"#");
 }
+//??? UTGÅ FRÅN DETTA
 /* //denna ska fixas
 string getAlarmInfo(char alarmfile[]){
   String alarmString = readFromSD(alarmFile);
@@ -363,16 +348,17 @@ string getAlarmInfo(char alarmfile[]){
 }
 */
 //activates the alarm and then calls getNextAlarm() after alarm has been deactivated
+
 void alarm(){
   Serial.println(String(F("Alarm!")));
   if(nextAlarmContent == '1'){
     dispense();
   } else {
+    //??? FIXA, SKA TA IN nextAlarmContent inte hårdkodat
     myLCDprint(String(F("Take your meds!")), "");
     //myLCDprint(nextAlarmContent, "");
   }
   while(keyState != 'E'){
-    // test
     readKBD();
     digitalWrite(buzzerPin, soundOn);
     
@@ -383,12 +369,13 @@ void alarm(){
 }
 
 //reads fileName from SD card without delimiter
-//returns result as String built from individual characters from the SD card
+//returns result as String built from individual characters from the SD card output stream
 String readFromSD(String fileName){
   Serial.println(String(F("ATTEMPTING CARD READ")));
-  SD.begin(chipSelect);
+  SD.begin();
   File readFile = SD.open(fileName);
   if(readFile){
+    //??? cap maximum string length by allocating size on declaration? Eller bara hoppas att det återvinns
     String res = "";
     while(readFile.available()){
       char nextChar = char(readFile.read());
@@ -406,7 +393,7 @@ String readFromSD(String fileName){
   }
 }
 
-
+//allows the user to set the time in an interactive menu
 void timeMenu() {
   bool firstRun = true;
   byte tim[] = {0,0};
@@ -419,7 +406,7 @@ void timeMenu() {
       firstRun = false;
       if (menuIndex < 2) { //pointer is on hh or mm
         if(keyState == 'U'){
-          tim[menuIndex] ++;
+          tim[menuIndex] ++; //??? kanske kan göras på en rad?
           tim[menuIndex] = tim[menuIndex]%modArr[menuIndex];//count up
         }
         if(keyState == 'D'){
@@ -427,7 +414,7 @@ void timeMenu() {
             tim[menuIndex] --;
             tim[menuIndex] = tim[menuIndex]%modArr[menuIndex];//count down
           }
-          else {
+          else { //handles wrapping around so that 0--; --> 23 || 59 not 255%(23 || 59)
             tim[menuIndex] = modArr[menuIndex]-1;
           }
         }
@@ -444,7 +431,7 @@ void timeMenu() {
       if (tim[1]%modArr[1] < 10) timeString += '0';
       timeString += String(tim[1]);
       
-      if (menuIndex == 3) { //user pressed R when on OK
+      if (menuIndex == 3) { //user pressed R when on OK (pointer on OK)
         setRTC(tim[0], tim[1]);
         break;
       }
@@ -456,7 +443,7 @@ void timeMenu() {
             line2 += ' ';
           }
         }
-        line2 = line2 + '^' + '^';
+        line2 = line2 + '^' + '^';//2 characters to avoid String()
         printLCD(line1, line2);
       }
       prevKeyState = keyState;
@@ -464,10 +451,9 @@ void timeMenu() {
   }
 }
 
-
-
-//sets the time in tm and resets the second to 0
-//these values are then sent to the RTC
+//sets the time and resets the second to 0
+//these values are set to the newly created tmElements instance then sent to the RTC
+//when a value is <10 and passed to RTC returning string will miss leading 0, workaround in getTime()
 bool setRTC(int newHour, int newMin){
   tmElements_t tm;
   tm.Hour = newHour;
@@ -481,7 +467,7 @@ bool setRTC(int newHour, int newMin){
   }
 }
 
-//returns a String in the format hh:MM
+//returns a String in the format hh:MM pulled from tmElements
 //leading zeros added to numbers n<10
 String getTime(){
   tmElements_t tm;
@@ -506,13 +492,12 @@ String getTime(){
   }
 }
 
-
-
 ///////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////
 /////////////////////// FUNCTIONS FOR STEPPER MOTOR   /////////////////////////////
 
 void dispense(){
+  //??? korrekt kommentar?
   // Set the spinning direction clockwise:
   digitalWrite(dirPin, HIGH);
   // Spin the stepper motor 1 revolution slowly:
