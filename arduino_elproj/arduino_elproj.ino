@@ -12,22 +12,23 @@ LiquidCrystal lcd(9,8,7,6,5,4); // generates an instance in the lcd
 
 //-------------------------READING KEYBOARD
 const byte kbdPin = A0;
-char keyState = 'N'; // current key pressed: "E", "U", "D", "R", "L", or "N"
-char prevKeyState = 'N'; // key pressed in the last loop cycle
+int kbdIn = 0; // pin for the keyboard
+char keyState; // current key pressed: "E", "U", "D", "R", "L", or "N"
+char prevKeyState; // key pressed in the last loop cycle
 
 //-------------------------CALLING LCD PRINT
-String line0 = ""; // string to be printed on the first row on the lcd screen
-String line1 = ""; // string to be printed on the second row on the lcd screen
-
+String line0(16); // string to be printed on the first row on the lcd screen
+String line1(16); // string to be printed on the second row on the lcd screen
 
 //-------------------------MENU SYSTEM
-int curMenuArray = 0; // keeps track of current menu
-int curMenuItem = 0;  // keeps track for current item in the current menu
-int changedMenu = 0;
-String menuMainString[] = {"List alarms", "Set time", "Reset wheel", "Sound", "Shamoun!", "GK elak"};
-String menuAlarmString[] = {"08:00", "12:30", "15:00", "18:45"};
-String menuSoundString[] = {"Sound off", "Sound on"};
-int menuLeng = 0;
+byte menuIntro = 0; // inital switch state of menuMain
+byte curMenuArray = 0;
+byte curMenuItem = 0;
+char menuMainString[][11] = {"List alarms", "Set time", "Reset wheel", "Sound"};
+char menuAlarmString[][11] = {"08:00", "12:30", "15:00", "18:45"};
+char menuSoundString[][11] = {"Sound off", "Sound on"};
+byte menuLeng = 0;
+byte changedMenu = 0;
 
 
 //////////////////////////////////////////////////////////////////////////////
@@ -161,14 +162,26 @@ void loop() {
 /////////////////////////////////////////////////////////////////////////////
 //////////////////////////      FUNC MENU     ///////////////////////////////
 
-void menuWrite(String menu[]) {
-
-  line0 = ">" + menu[0 + curMenuItem];
+void menuWrite(char menu[][11]) {
+  //--------------------------------WRITE THE MENU
+  //Serial.println(curMenuItem);
+  byte index;
+  for(byte i=0; i < 11; i++){
+    if (menu[0+curMenuItem] != "") index = i;
+  }
+  String temp = String(menu[0+curMenuItem]).substring(0,index+1);
+  line0 = ">" + temp;
+  for(byte i=0; i < 11; i++){
+    if (menu[1+curMenuItem] != "") index = i;
+  }
+  temp = String(menu[1+curMenuItem]).substring(0,index+1);
   if (curMenuItem < menuLeng-1){
-    line1 = " " + menu[1+curMenuItem];
+    line1 = " " + temp;
   } else {
     line1 = " ";
   }
+
+  //Serial.println("line0 = "+line0+"\nline1="+line1+"curMenuItem = "+curMenuItem+"\n\n");
   printLCD(line0, line1);
 }
 
@@ -220,7 +233,6 @@ void updateKBD() {
 
 
 void updateMenu(){
-  ///////////////////////////////////////////////////////////////// LOOP MENU
   //---------------------------------------SCREEN SAVER
   if (counter % screenSaverTime == 0) {
     //String line1 = "Next alarm " + nextAlarmTime;
