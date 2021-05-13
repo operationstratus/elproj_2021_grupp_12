@@ -24,11 +24,12 @@ String line1(16); // string to be printed on the second row on the lcd screen
 byte menuIntro = 0; // inital switch state of menuMain
 byte curMenuArray = 0;
 byte curMenuItem = 0;
+//menu items are all 11 items long to account for the longest item in char array
 char menuMainString[][11] = {"List alarms", "Set time", "Reset wheel", "Sound"};
-char menuAlarmString[][11] = {"08:00", "12:30", "15:00", "18:45"};
+char menuAlarmString[7][11]; //max number of alarms per day is set here at 7
 char menuSoundString[][11] = {"Sound off", "Sound on"};
 byte menuLeng = 0;
-byte changedMenu = 0;
+bool changedMenu = false;
 
 
 //////////////////////////////////////////////////////////////////////////////
@@ -43,27 +44,25 @@ byte changedMenu = 0;
 #include <TimeLib.h>
 #include <DS1307RTC.h>
 
-//files
+//files and content
 char alarmFile[] = "alarms.txt";
-
-//variable wires. NO, GO AWAY!
-//const int chipSelect = 10;
+String alarmString;
 
 //variables
-char nextAlarmTime[] = "13:37";
-String nextAlarmContent = "";
+String nextAlarmTime(6); //6 chars since it is hh:MM and exit character
+String nextAlarmContent(25); //12*2 (LCD characters) + exit character
 
 //Buzzer
 const int buzzerPin = 10;
 
 
 // SCREEN SAVE
-const int screenSaverTime = 100000;
-int counter = screenSaverTime; //Va? varför?
+const int screenSaverTime = 200;
+int counter = screenSaverTime; // makes sure that the screensaver is shown on boot
 
 
 // ALARM
-int soundOn = 0;
+bool soundOn = true;
 
 
 //////////////////////////////////////////////////////////////////////////////
@@ -87,14 +86,12 @@ void setup() {
   while (!Serial) ; // wait for Arduino Serial Monitor
   delay(200);
 
-  // INIT THE ALARM AND SD
-  //getNextAlarm();
-  //pinMode(buzzerPin, OUTPUT);
-  //digitalWrite(buzzerPin, LOW);
-
+  alarmString = readFromSD(alarmFile); //this is only needed on boot, allocate the alarmSTring memory early and keep it
+  updateAlarmList(alarmString); //only needed on boot, never changes
+  updateAlarmNext(alarmString);
+  
   // INIT THE LCD AND MENU VARS
   lcd.begin(16,2);
-  //menuLeng = sizeof(menuMainString)/sizeof(menuMainString[0]); // calculate the lenght of the current menu array and write the initial menu
   //user welcome message on boot
   printLCD(String(F("   WELCOME TO")), String(F("    ROSETTEN")));
 
@@ -104,13 +101,8 @@ void setup() {
   pinMode(stepPin, OUTPUT);
   pinMode(dirPin, OUTPUT);
 
-
-  //??? // TESTS
-  //setRTC(17, 4);
-  //getNextAlarm();
-  //Alarm();
-
-  delay(1500);
+  //show the welcome message for some time
+  delay(2000);
 }
 
 
@@ -124,15 +116,15 @@ void loop() {
   updateMenu();
 
   ///////////////////////////////////////////////////// UPDATES AT END OF LOOP
+  if (counter == screenSaverTime) {
+   counter = 0;
+   if(getTime() == nextAlarmTime) { // checks if alarm() should be called
+    alarm();
+   }
+  }
   counter++;
   prevKeyState = keyState;
-
-  ///////////////////////////////////////////////////// LOOP SD AND ALARM
-  //Serial.println("getTime: "+getTime()+" nextAlarmTime: "+nextAlarmTime);
-  //if(getTime() == nextAlarmTime) alarm();
 }
-
-
 
 //////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////
@@ -152,17 +144,15 @@ void menuWrite(char menu[][11]) {
   }
   String temp = String(menu[0+curMenuItem]).substring(0,index+1);
   line0 = '>' + temp;
-  for(byte i=0; i < 11; i++){
-    if (menu[1+curMenuItem] != "") index = i;
-  }
-  temp = String(menu[1+curMenuItem]).substring(0,index+1);
   if (curMenuItem < menuLeng-1){
+    for(byte i=0; i < 11; i++){
+      if (menu[1+curMenuItem] != "") index = i;
+    }
+    temp = String(menu[1+curMenuItem]).substring(0,index+1);
     line1 = ' ' + temp;
   } else {
     line1 = ' ';
   }
-
-  //Serial.println("line0 = "+line0+"\nline1="+line1+"curMenuItem = "+curMenuItem+"\n\n");
   printLCD(line0, line1);
 }
 
@@ -216,80 +206,145 @@ void updateKBD() {
 
 void updateMenu(){
   //---------------------------------------SCREEN SAVER
-  if (counter % screenSaverTime == 0) {
-    //String line1 = "Next alarm " + nextAlarmTime;
-    //myLCDprint(getTime(), line1);
-    printLCD(String(F("     13:37", "Next Alarm 69:69"))); //???change
+  if (counter == screenSaverTime) {
+    printLCD(String(F("     "))+getTime(), String(F("Next Alarm "))+nextAlarmTime);
     curMenuItem = 0;
   }
-
   if (changedMenu or (keyState != prevKeyState and keyState != 'N')){
-    changedMenu = 0;
-
-    Serial.println(String(F("pressed: "))+String(keyState));
-
-    counter = 0; // reset screen time counter
-    switch(curMenuArray) {
-      case 0:
-        menuLeng = sizeof(menuMainString)/sizeof(menuMainString[0]); // calculate the length of a menuArray
-        if (keyState == 'U' && curMenuItem > 0) {
-          curMenuItem--;
-          menuWrite(menuMainString);
-        } else if (keyState == 'D' && curMenuItem < menuLeng-1){
-          curMenuItem++;
-          menuWrite(menuMainString);
-        } else if (keyState == 'R'){
-          Serial.println("Entered "+String(menuMainString[curMenuItem]));
-          curMenuArray = curMenuItem+1;
+    if (counter == screenSaverTime) {
+      counter = 0;
+      curMenuItem = 0;
+      menuLeng = sizeof(menuMainString)/sizeof(menuMainString[0]); // calculate the length of a menuArray
+      menuWrite(menuMainString);
+    } else {
+      counter = 0; // reset screen time counter
+      changedMenu = false;
+      Serial.println(String(F("pressed: "))+String(keyState));
+      switch(curMenuArray) {
+        case 0:
+          menuLeng = sizeof(menuMainString)/sizeof(menuMainString[0]); // calculate the length of a menuArray
+          if (keyState == 'U' && curMenuItem > 0) {
+            curMenuItem--;
+            menuWrite(menuMainString);
+          } else if (keyState == 'D' && curMenuItem < menuLeng-1){
+            curMenuItem++;
+            menuWrite(menuMainString);
+          } else if (keyState == 'R'){
+            Serial.println("Entered "+String(menuMainString[curMenuItem]));
+            curMenuArray = curMenuItem+1;
+            curMenuItem = 0;
+            changedMenu = true;
+          } else {
+            menuWrite(menuMainString);
+          }
+        break;
+        
+        case 1:
+          menuLeng = sizeof(menuAlarmString)/sizeof(menuAlarmString[0]); // calculate the length of a menuArray
+          if (keyState == 'U' && curMenuItem > 0) {
+            curMenuItem--;
+            menuWrite(menuAlarmString);
+          } else if (keyState == 'D' && curMenuItem < menuLeng-1){
+            curMenuItem++;
+            menuWrite(menuAlarmString);
+          } else if (keyState == 'L'){
+            curMenuArray = 0;
+            curMenuItem = 0;
+            changedMenu = true;
+          } else {
+            menuWrite(menuAlarmString);
+          }
+        break;
+  
+        case 2:
+          changedMenu = true;//enters timeMenu() with an update before button is pressed
+          timeMenu();
+          curMenuArray = 0;
           curMenuItem = 0;
-          changedMenu = 1;
-        } else {
+          menuLeng = sizeof(menuMainString)/sizeof(menuMainString[0]); // calculate the length of a menuArray
           menuWrite(menuMainString);
+        break;
+  
+        case 4:
+          menuLeng = sizeof(menuSoundString)/sizeof(menuSoundString[0]); // calculate the length of a menuArray
+          if (keyState == 'U' && curMenuItem > 0) {
+            curMenuItem--;
+            menuWrite(menuSoundString);
+          } else if (keyState == 'D' && curMenuItem < menuLeng-1){
+            curMenuItem++;
+            menuWrite(menuSoundString);
+          } else if (keyState == 'E'){
+            curMenuArray = 0;
+            soundOn = curMenuItem;
+            Serial.println("soundOn = "+String(soundOn));
+            curMenuItem = 0;
+            changedMenu = true;
+          } else {
+            menuWrite(menuSoundString);
+          }
+        break;
+      }
+    }
+  }
+}
+
+//allows the user to set the time in an interactive menu
+void timeMenu() {
+  byte tim[] = {0,0};
+  byte modArr[] = {24, 60};
+  byte menuIndex = 0;
+  String line1(16), line2(16);
+  while (true) {
+    updateKBD();
+    bool buttonNotPressed = true;
+    if (changedMenu or keyState != prevKeyState){
+      if (menuIndex < 2 && buttonNotPressed) { //pointer is on hh or mm
+        if(keyState == 'U'){
+          tim[menuIndex] ++; //??? kanske kan göras på en rad?
+          tim[menuIndex] = tim[menuIndex]%modArr[menuIndex];//count up
+          buttonNotPressed = false;
         }
-      break;
+        if(keyState == 'D' && buttonNotPressed){
+          if (tim[menuIndex] != 0) {
+            tim[menuIndex] --;
+            tim[menuIndex] = tim[menuIndex]%modArr[menuIndex];//count down
+            buttonNotPressed = false;
+          }
+          else { //handles wrapping around so that 0--; --> 23 || 59 not 255%(23 || 59)
+            tim[menuIndex] = modArr[menuIndex]-1;
+          }
+        }
+      }
+      if (keyState == 'R' && buttonNotPressed and not changedMenu){
+        menuIndex += 1;
+        buttonNotPressed = false;
+      }
+      if (keyState == 'L' && menuIndex > 0 && buttonNotPressed){
+        menuIndex -= 1;
+      }
+      String timeString; //build timeString
+      if (tim[0]%modArr[0] < 10) timeString += '0';
+      timeString += String(tim[0])+':';
+      if (tim[1]%modArr[1] < 10) timeString += '0';
+      timeString += String(tim[1]);
       
-      case 1:
-        menuLeng = sizeof(menuAlarmString)/sizeof(menuAlarmString[0]); // calculate the length of a menuArray
-        if (keyState == 'U' && curMenuItem > 0) {
-          curMenuItem--;
-          menuWrite(menuAlarmString);
-        } else if (keyState == 'D' && curMenuItem < menuLeng-1){
-          curMenuItem++;
-          menuWrite(menuAlarmString);
-        } else if (keyState == 'L'){
-          curMenuArray = 0;
-          curMenuItem = 0;
-          changedMenu = 1;
-        } else {
-          menuWrite(menuAlarmString);
+      if (menuIndex == 3) { //user pressed R when on OK (pointer on OK)
+        setRTC(tim[0], tim[1]);
+        break;
+      }
+      if (keyState != 'N' or changedMenu) { //only update LCD if button has been pressed or menu just entered
+        line1 = timeString+String(F(" OK"));
+        line2 = "";
+        for (byte i = 0; i < menuIndex; i+=1) {
+          for (byte j = 0; j < 3; j+=1) {
+            line2 += ' ';
+          }
         }
-      break;
-
-      case 2:
-        timeMenu();
-        curMenuArray = 0;
-        curMenuItem = 0;
-        changedMenu = 0;
-      break;
-
-      case 4:
-        menuLeng = sizeof(menuSoundString)/sizeof(menuSoundString[0]); // calculate the length of a menuArray
-        if (keyState == 'U' && curMenuItem > 0) {
-          curMenuItem--;
-          menuWrite(menuSoundString);
-        } else if (keyState == 'D' && curMenuItem < menuLeng-1){
-          curMenuItem++;
-          menuWrite(menuSoundString);
-        } else if (keyState == 'E'){
-          curMenuArray = 0;
-          soundOn = curMenuItem;
-          Serial.println("soundOn = "+String(soundOn));
-          curMenuItem = 0;
-          changedMenu = 1;
-        } else {
-          menuWrite(menuSoundString);
-        }
-      break;
+        line2 = line2 + '^' + '^';//2 characters to avoid String()
+        printLCD(line1, line2);
+      }
+      prevKeyState = keyState;
+      changedMenu = false;
     }
   }
 }
@@ -301,10 +356,9 @@ void updateMenu(){
 //??? GÖR OM ALL SKIT MED ALARM
 //checks all alarms on SD card and selects the next alarm to be executed
 //nextAlarmTime is set as next alarm and accompanying string is set in nextAlarmContent
-void getNextAlarm(String alarmString){
+void updateAlarmNext(String alarmString){
   String tempTime(5);
   nextAlarmTime = "23:59";
-  Serial.println(alarmString);
   for(int i = 0; i < alarmString.length(); i++) {
      if(alarmString[i] == '?'){
       //compare times
@@ -322,20 +376,29 @@ void getNextAlarm(String alarmString){
       tempTime += alarmString[i];
      }
   }
-  //Serial.println("#"+nextAlarmTime+"#");
-  //Serial.println("#"+nextAlarmContent+"#");
 }
-//??? UTGÅ FRÅN DETTA
-/* //denna ska fixas
-string getAlarmInfo(char alarmfile[]){
-  String alarmString = readFromSD(alarmFile);
+
+void updateAlarmList(String alarmString) {
   byte nrOfLines = 0;
-  for(int i = 0; i < alarmString.length(); i++ ) {
+  for(byte i = 0; i < alarmString.length(); i++ ) {
     if(alarmString[i] == ';'){
       nrOfLines ++;
     }
   }
-  char *pointer[nrOfLines];
+  byte index = 0;
+  for(byte i = 0; i < nrOfLines; i++) {
+    alarmString.substring(index, alarmString.substring(index).indexOf(';')).toCharArray(menuAlarmString[i], 11);
+    index = alarmString.substring(index).indexOf(';');
+  }
+}
+/*
+//??? UTGÅ FRÅN DETTA
+ //denna ska fixas
+String getAlarmInfo(char alarmfile[]){
+  Serial.println("getAlarmInfo called");
+  String alarmString = readFromSD(alarmFile);
+  byte nrOfLines = countLines(alarmString);
+  
   int index = 0;
   String temp;
   for(int i = 0; i < nrOfLines; i++ ) {
@@ -345,27 +408,26 @@ string getAlarmInfo(char alarmfile[]){
   for(int i = 0; i < nrOfLines; i++ ) {
     Serial.println(*pointer[i]);
   }
+  
 }
 */
 //activates the alarm and then calls getNextAlarm() after alarm has been deactivated
-
 void alarm(){
   Serial.println(String(F("Alarm!")));
   if(nextAlarmContent == '1'){
     dispense();
   } else {
     //??? FIXA, SKA TA IN nextAlarmContent inte hårdkodat
-    myLCDprint(String(F("Take your meds!")), "");
+    printLCD(String(F("Take your meds!")), "");
     //myLCDprint(nextAlarmContent, "");
   }
   while(keyState != 'E'){
-    readKBD();
+    updateKBD();
     digitalWrite(buzzerPin, soundOn);
-    
   }
   digitalWrite(buzzerPin, LOW);
   menuWrite(menuMainString);
-  getNextAlarm(alarmFile);
+  updateAlarmNext(readFromSD(alarmFile));
 }
 
 //reads fileName from SD card without delimiter
@@ -390,64 +452,6 @@ String readFromSD(String fileName){
   }
   else{
     Serial.println(String(F("Err: cannot open file (read): "))+fileName);
-  }
-}
-
-//allows the user to set the time in an interactive menu
-void timeMenu() {
-  bool firstRun = true;
-  byte tim[] = {0,0};
-  byte modArr[] = {24, 60};
-  byte menuIndex = 0;
-  String line1(16), line2(16);
-  while (true) {
-    updateKBD();
-    if (firstRun or keyState != prevKeyState){
-      firstRun = false;
-      if (menuIndex < 2) { //pointer is on hh or mm
-        if(keyState == 'U'){
-          tim[menuIndex] ++; //??? kanske kan göras på en rad?
-          tim[menuIndex] = tim[menuIndex]%modArr[menuIndex];//count up
-        }
-        if(keyState == 'D'){
-          if (tim[menuIndex] != 0) {
-            tim[menuIndex] --;
-            tim[menuIndex] = tim[menuIndex]%modArr[menuIndex];//count down
-          }
-          else { //handles wrapping around so that 0--; --> 23 || 59 not 255%(23 || 59)
-            tim[menuIndex] = modArr[menuIndex]-1;
-          }
-        }
-      }
-      if (keyState == 'R'){
-        menuIndex += 1;
-      }
-      if (keyState == 'L' && menuIndex > 0){
-        menuIndex -= 1;
-      }
-      String timeString; //build timeString
-      if (tim[0]%modArr[0] < 10) timeString += '0';
-      timeString += String(tim[0])+':';
-      if (tim[1]%modArr[1] < 10) timeString += '0';
-      timeString += String(tim[1]);
-      
-      if (menuIndex == 3) { //user pressed R when on OK (pointer on OK)
-        setRTC(tim[0], tim[1]);
-        break;
-      }
-      if (keyState != 'N') { //only update LCD if button has been pressed
-        line1 = timeString+String(F(" OK"));
-        line2 = "";
-        for (byte i = 0; i < menuIndex; i+=1) {
-          for (byte j = 0; j < 3; j+=1) {
-            line2 += ' ';
-          }
-        }
-        line2 = line2 + '^' + '^';//2 characters to avoid String()
-        printLCD(line1, line2);
-      }
-      prevKeyState = keyState;
-    }
   }
 }
 
@@ -496,9 +500,9 @@ String getTime(){
 ///////////////////////////////////////////////////////////////////////////////////
 /////////////////////// FUNCTIONS FOR STEPPER MOTOR   /////////////////////////////
 
+//dispenses one container of pills
 void dispense(){
-  //??? korrekt kommentar?
-  // Set the spinning direction clockwise:
+  // Set the spinning direction counterclockwise:
   digitalWrite(dirPin, HIGH);
   // Spin the stepper motor 1 revolution slowly:
   for (int i = 0; i < (stepsPerRevolution)/8; i++) {

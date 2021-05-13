@@ -47,11 +47,9 @@ void setup() {
 
   // Open serial communications and wait for port to open:
   Serial.begin(9600);
-  while (!Serial) {
-    delay(10); // wait for serial port to connect. Needed for native USB port only
-  }
+  delay(100);
 
-  Serial.begin("test");
+  Serial.println("test");
 
   /*
   Serial.print("\nInitializing SD card...");
@@ -115,7 +113,8 @@ void setup() {
   root.ls(LS_R | LS_DATE | LS_SIZE);
   root.close();
   */
-  String text = readFromSD("alarms.txt");
+  char alarmFile[] = "alarms.txt";
+  String text = readFromSD(alarmFile);
   Serial.println("reading...");
   Serial.println(text);
   Serial.println("copying...");
