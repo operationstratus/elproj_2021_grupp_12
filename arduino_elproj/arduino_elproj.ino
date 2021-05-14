@@ -1,13 +1,13 @@
-//////////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////////
-//////////////////////        LIBRARIES       ////////////////////////////////
+////////////////////////////////////////
+////////////////////////////////////////
+//////////////////////        LIBRARIES
 
 #include <LiquidCrystal.h>
 LiquidCrystal lcd(9,8,7,6,5,4); // generates an instance in the lcd
 
-//////////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////////
-//////////////////////    GLOBAL VARIABLES    ////////////////////////////////
+//////////////////////////////////////////
+//////////////////////////////////////////
+//////////////////////    GLOBAL VARIABLES
 
 
 //-------------------------READING KEYBOARD
@@ -76,7 +76,7 @@ bool soundOn = true;
 #define stepsPerRevolution 200*2 // times two since we have enabled half stepping
 #define stepDelay 5000
 // KEEPING TRACK OF HOW MANY DISPENSES
-int dispenseCount = 0;
+int dispenseCount = 14;
 bool needToRefill = false;
 
 
@@ -104,6 +104,10 @@ void setup() {
   pinMode(stepPin, OUTPUT);
   pinMode(dirPin, OUTPUT);
 
+  // INIT BUZZER SYSTEM
+  pinMode(buzzerPin, OUTPUT);
+  digitalWrite(buzzerPin, LOW);
+
   //show the welcome message for some time
   delay(2000);
 }
@@ -113,7 +117,7 @@ void setup() {
 //////////////////////////////////////////////////////////////////////////////
 //////////////////////////        LOOP         ///////////////////////////////
 void loop() {
-  digitalWrite(buzzerPin, soundOn);
+  
 
   updateKBD();
 
@@ -133,7 +137,7 @@ void loop() {
   ///////////////////////////////////////////////////// UPDATES AT END OF LOOP
 
   //--------------------------if 14 dispences has been made, then set needToRefill to true witch puts the machine into refill alert mode
-  if (dispenseCount >= 14) {
+  if (dispenseCount == 0) {
     Serial.println("Empty");
     needToRefill = true;
     printLCD(String(F("     "))+getTime(), " EMPTY, REFILL! ");
@@ -229,7 +233,11 @@ void updateKBD() {
 void updateMenu(){
   //---------------------------------------SCREEN SAVER
   if (counter == screenSaverTime) {
-    printLCD(String(getTime()+F(" doses: ")+dispenseCount), String(F("Next Alarm "))+nextAlarmTime);
+    if (dispenseCount < 10) {
+      printLCD(String(getTime()+F("   doses: ")+dispenseCount), String(F("Next Alarm "))+nextAlarmTime);
+    } else {
+      printLCD(String(getTime()+F("   doses:")+dispenseCount), String(F("Next Alarm "))+nextAlarmTime);
+    }
     curMenuItem = 0;
   }
   if (changedMenu or (keyState != prevKeyState and keyState != 'N')){
@@ -298,9 +306,9 @@ void updateMenu(){
           } else if (keyState == 'R'){
             curMenuArray = 0;
             soundOn = curMenuItem;
-            Serial.println("soundOn = "+String(soundOn));
             curMenuItem = 0;
-            changedMenu = true;
+            menuWrite(menuMainString);
+            
           } else {
             menuWrite(menuSoundString);
           }
@@ -443,13 +451,15 @@ void alarm(){
     printLCD(String(F("Take your meds!")), "");
     //myLCDprint(nextAlarmContent, "");
   }
-  while(keyState != 'E'){
+
+  digitalWrite(buzzerPin, soundOn);
+  while(keyState == 'N'){
     updateKBD();
-    digitalWrite(buzzerPin, soundOn);
   }
   digitalWrite(buzzerPin, LOW);
   menuWrite(menuMainString);
   updateAlarmNext(readFromSD(alarmFile));
+  delay(200); // sebTest the buzzer 
 }
 
 //reads fileName from SD card without delimiter
@@ -534,5 +544,5 @@ void dispense(){
     digitalWrite(stepPin, LOW);
     delayMicroseconds(stepDelay);
   }
-  dispenseCount++;
+  if (dispenseCount > 0) dispenseCount--;
 }
