@@ -116,9 +116,23 @@ void loop() {
   digitalWrite(buzzerPin, soundOn);
 
   updateKBD();
-  if (!needToRefill) updateMenu();
+
+  //update menu, but only if not have to refill:
+  if (needToRefill) {
+    if (keyState != prevKeyState and keyState != 'N') {
+      // if need to refill, press any key to turn off refill alert message 
+      needToRefill = false;
+      dispenseCount = 0;
+      changedMenu = true; // this ensures that the menu gets update
+      
+    }
+  } else {
+    updateMenu();
+  }
 
   ///////////////////////////////////////////////////// UPDATES AT END OF LOOP
+
+  //--------------------------if 14 dispences has been made, then set needToRefill to true witch puts the machine into refill alert mode
   if (dispenseCount >= 14) {
     Serial.println("Empty");
     needToRefill = true;
@@ -215,7 +229,7 @@ void updateKBD() {
 void updateMenu(){
   //---------------------------------------SCREEN SAVER
   if (counter == screenSaverTime) {
-    printLCD(String(F("     "))+getTime(), String(F("Next Alarm "))+nextAlarmTime);
+    printLCD(String(getTime()+F(" doses: ")+dispenseCount), String(F("Next Alarm "))+nextAlarmTime);
     curMenuItem = 0;
   }
   if (changedMenu or (keyState != prevKeyState and keyState != 'N')){
@@ -281,7 +295,7 @@ void updateMenu(){
           } else if (keyState == 'D' && curMenuItem < menuLeng-1){
             curMenuItem++;
             menuWrite(menuSoundString);
-          } else if (keyState == 'E'){
+          } else if (keyState == 'R'){
             curMenuArray = 0;
             soundOn = curMenuItem;
             Serial.println("soundOn = "+String(soundOn));
