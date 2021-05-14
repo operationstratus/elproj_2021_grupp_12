@@ -75,6 +75,9 @@ bool soundOn = true;
 #define stepPin 3
 #define stepsPerRevolution 200*2 // times two since we have enabled half stepping
 #define stepDelay 5000
+// KEEPING TRACK OF HOW MANY DISPENSES
+int dispenseCount = 0;
+bool needToRefill = false;
 
 
 //////////////////////////////////////////////////////////////////////////////
@@ -116,6 +119,10 @@ void loop() {
   updateMenu();
 
   ///////////////////////////////////////////////////// UPDATES AT END OF LOOP
+  if (dispenseCount >= 14) {
+    Serial.println("Empty");
+    needToRefill = true;
+  }
   if (counter == screenSaverTime) {
    counter = 0;
    if(getTime() == nextAlarmTime) { // checks if alarm() should be called
@@ -512,4 +519,5 @@ void dispense(){
     digitalWrite(stepPin, LOW);
     delayMicroseconds(stepDelay);
   }
+  dispenseCount++;
 }
