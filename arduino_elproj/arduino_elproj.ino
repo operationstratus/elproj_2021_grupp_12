@@ -26,7 +26,8 @@ byte menuIntro = 0; // inital switch state of menuMain
 byte curMenuArray = 0;
 byte curMenuItem = 0;
 //menu items are all 11 items long to account for the longest item in char array
-char menuMainString[][11] = {"List alarms", "Set time", "Reset wheel", "Sound"};
+char menuMainString[][11] = {"List alarms", "Set time", "Sound"};
+//char menuMainString[][11] = {"List alarms", "Set time", "Reset wheel", "Sound"};
 char menuAlarmString[7][11]; //max number of alarms per day is set here at 7
 char menuSoundString[][11] = {"Sound off", "Sound on"};
 byte menuLeng = 0;
@@ -59,7 +60,10 @@ const int buzzerPin = 10;
 
 // SCREEN SAVE
 const int screenSaverTime = 200;
-int counter = screenSaverTime; // makes sure that the screensaver is shown on boot
+int counterScreen = screenSaverTime; // makes sure that the screensaver is shown on boot
+
+const int AlarmCheckTime = 200;
+int counterAlarmCheck = 0;
 
 
 // ALARM
@@ -110,7 +114,7 @@ void setup() {
   digitalWrite(buzzerPin, LOW);
 
   //show the welcome message for some time
-  delay(2000);
+  delay(2500);
 }
 
 
@@ -143,13 +147,21 @@ void loop() {
     needToRefill = true;
     printLCD(String(F("     "))+getTime(), " EMPTY, REFILL! ");
   }
-  if (counter == screenSaverTime) {
-   counter = 0;
-   if(getTime() == nextAlarmTime) { // checks if alarm() should be called
-    alarm();
-   }
+
+
+  // check if its time to check and update alarm
+  if (counterAlarmCheck < AlarmCheckTime) {
+    counterAlarmCheck++;
+  } else {
+    counterAlarmCheck = 0;
+    if(getTime() == nextAlarmTime) {
+      // checks if alarm() should be called
+      alarm();
+    }
   }
-  counter++;
+  
+  
+  if (counterScreen < screenSaverTime) counterScreen++;
   prevKeyState = keyState;
 }
 
@@ -231,8 +243,13 @@ void updateKBD() {
 
 
 void updateMenu(){
+
+  //sebTest
+  Serial.println("screenSaverTime = "+String(screenSaverTime)+", counterScreen = "+String(counterScreen));
+
+  
   //---------------------------------------SCREEN SAVER
-  if (counter == screenSaverTime) {
+  if (counterScreen == screenSaverTime) {
     if (dispenseCount < 10) {
       printLCD(String(getTime()+F("   doses: ")+dispenseCount), String(F("Next Alarm "))+nextAlarmTime);
     } else {
@@ -240,24 +257,35 @@ void updateMenu(){
     }
     curMenuItem = 0;
   }
+
+  
   if (changedMenu or (keyState != prevKeyState and keyState != 'N')){
-    if (counter == screenSaverTime) {
-      counter = 0;
+
+    // if this was entered from screen saver mode:
+    if (counterScreen == screenSaverTime) {
+      counterScreen = 0;
       curMenuItem = 0;
       menuLeng = sizeof(menuMainString)/sizeof(menuMainString[0]); // calculate the length of a menuArray
       menuWrite(menuMainString);
+      prevKeyState = keyState; //sebDebug
+      Serial.println("changedMenu = "+changedMenu);
     } else {
-      counter = 0; // reset screen time counter
+      counterScreen = 0; // reset screen time counterScreen
       
-      // sebTest:
-      if (changedMenu) delay(200);
-      
-      
-      changedMenu = false;
-      Serial.println(String(F("pressed: "))+String(keyState));
       switch(curMenuArray) {
         case 0:
+          Serial.println("0"); //sebDebug
+        
           menuLeng = sizeof(menuMainString)/sizeof(menuMainString[0]); // calculate the length of a menuArray
+
+          //sebTest
+          if (changedMenu) {
+            Serial.println("changedMenu");
+            menuWrite(menuMainString);
+            changedMenu = false;
+            break;
+          }
+          
           if (keyState == 'U' && curMenuItem > 0) {
             curMenuItem--;
             menuWrite(menuMainString);
@@ -265,7 +293,8 @@ void updateMenu(){
             curMenuItem++;
             menuWrite(menuMainString);
           } else if (keyState == 'R'){
-            Serial.println("Entered "+String(menuMainString[curMenuItem]));
+            Serial.println("Enter "+String(menuMainString[curMenuItem]));
+            Serial.println("1"); //sebDebug
             curMenuArray = curMenuItem+1;
             curMenuItem = 0;
             changedMenu = true;
@@ -276,6 +305,17 @@ void updateMenu(){
         
         case 1:
           menuLeng = sizeof(menuAlarmString)/sizeof(menuAlarmString[0]); // calculate the length of a menuArray
+
+          //sebTest
+          if (changedMenu) {
+            menuWrite(menuAlarmString);
+            Serial.println("2"); //sebDebug
+            changedMenu = false;
+            break;
+          }
+          
+          Serial.println("3 Detta ska inte synas på detta test"); //sebDebug
+          
           if (keyState == 'U' && curMenuItem > 0) {
             curMenuItem--;
             menuWrite(menuAlarmString);
@@ -300,7 +340,7 @@ void updateMenu(){
           menuWrite(menuMainString);
         break;
   
-        case 4:
+        case 3:
           menuLeng = sizeof(menuSoundString)/sizeof(menuSoundString[0]); // calculate the length of a menuArray
           if (keyState == 'U' && curMenuItem > 0) {
             curMenuItem--;
@@ -402,6 +442,7 @@ void updateAlarmNext(String alarmString){
       if(tempTime > getTime() && tempTime < nextAlarmTime){ //"smallest" time AFTER current time
         nextAlarmTime = tempTime;
         nextAlarmContent = alarmString.substring(i+1,alarmString.substring(i+1).indexOf(';')+i+1);
+        Serial.println("nextAlarmContent = "+nextAlarmContent);
       }
      }
      else if(alarmString[i] == ';'){
@@ -454,7 +495,6 @@ void alarm(){
   } else {
     //??? FIXA, SKA TA IN nextAlarmContent inte hårdkodat
     printLCD(String(F("Take your meds!")), "");
-    //myLCDprint(nextAlarmContent, "");
   }
 
   digitalWrite(buzzerPin, soundOn);
