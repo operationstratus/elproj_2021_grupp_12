@@ -116,12 +116,13 @@ void loop() {
   digitalWrite(buzzerPin, soundOn);
 
   updateKBD();
-  updateMenu();
+  if (!needToRefill) updateMenu();
 
   ///////////////////////////////////////////////////// UPDATES AT END OF LOOP
   if (dispenseCount >= 14) {
     Serial.println("Empty");
     needToRefill = true;
+    printLCD(String(F("     "))+getTime(), " EMPTY, REFILL! ");
   }
   if (counter == screenSaverTime) {
    counter = 0;
