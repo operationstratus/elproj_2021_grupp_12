@@ -59,11 +59,12 @@ const int buzzerPin = 10;
 
 
 // SCREEN SAVE
-const int screenSaverTime = 200;
+const int screenSaverTime = 50; // how many loop cyckles before screen enters screen saver
 int counterScreen = screenSaverTime; // makes sure that the screensaver is shown on boot
 
-const int AlarmCheckTime = 200;
-int counterAlarmCheck = 0;
+// CHECKING THE USERS ALARMS WITH CERTAIN INTERVALS
+const int AlarmCheckTime = 100; // how many loop cyckles between each time the machine checks and updates the list of alarms
+int counterAlarmCheck = 0; // counter of keeping track of this
 
 
 // ALARM
@@ -81,7 +82,7 @@ bool soundOn = true;
 #define stepsPerRevolution 200*2 // times two since we have enabled half stepping
 #define stepDelay 5000
 // KEEPING TRACK OF HOW MANY DISPENSES
-int dispenseCount = 14;
+int dispenseCount = 1;
 bool needToRefill = false;
 
 
@@ -132,7 +133,7 @@ void loop() {
     if (keyState != prevKeyState and keyState != 'N') {
       // if need to refill, press any key to turn off refill alert message 
       needToRefill = false;
-      dispenseCount = 0;
+      dispenseCount = 14;
       changedMenu = true; // this ensures that the menu gets update
       
     }
@@ -143,7 +144,7 @@ void loop() {
   // UPDATES AT END OF LOOP
 
   //--------------------------if 14 dispences has been made, then set needToRefill to true witch puts the machine into refill alert mode
-  if (dispenseCount == 0) {
+  if (dispenseCount == 14) {
     Serial.println("Empty");
     needToRefill = true;
     printLCD(String(F("     "))+getTime(), " EMPTY, REFILL! ");
@@ -245,16 +246,13 @@ void updateKBD() {
 
 void updateMenu(){
 
-  //sebTest
-  Serial.println("screenSaverTime = "+String(screenSaverTime)+", counterScreen = "+String(counterScreen));
-
   
   //---------------------------------------SCREEN SAVER
   if (counterScreen == screenSaverTime) {
     if (dispenseCount < 10) {
-      printLCD(String(getTime()+F("   doses: ")+dispenseCount), String(F("Next Alarm "))+nextAlarmTime);
+      printLCD(String(getTime()+F("  Dose ")+dispenseCount+F("/14")), String(F("Next Alarm "))+nextAlarmTime);
     } else {
-      printLCD(String(getTime()+F("   doses:")+dispenseCount), String(F("Next Alarm "))+nextAlarmTime);
+      printLCD(String(getTime()+F("  Dose")+dispenseCount+F("/14")), String(F("Next Alarm "))+nextAlarmTime);
     }
     curMenuItem = 0;
   }
@@ -589,5 +587,5 @@ void dispense(){
     digitalWrite(stepPin, LOW);
     delayMicroseconds(stepDelay);
   }
-  if (dispenseCount > 0) dispenseCount--;
+  if (dispenseCount < 14) dispenseCount++;
 }
