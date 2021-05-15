@@ -426,7 +426,7 @@ void timeMenu() {
 //////////////////////////////////////////////
 /////////////  FUNCTIONS FOR SD, ALARM, CLOCK
 
-//??? GÖR OM ALL SKIT MED ALARM
+//??? GÖR OM 
 //checks all alarms on SD card and selects the next alarm to be executed
 //nextAlarmTime is set as next alarm and accompanying string is set in nextAlarmContent
 void updateAlarmNext(String alarmString){
