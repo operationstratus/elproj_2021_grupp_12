@@ -25,11 +25,13 @@ String line1(16); // string to be printed on the second row on the lcd screen
 byte menuIntro = 0; // inital switch state of menuMain
 byte curMenuArray = 0;
 byte curMenuItem = 0;
-//menu items are all 11 items long to account for the longest item in char array
-char menuMainString[][11] = {"List alarms", "Set time", "Sound"};
-//char menuMainString[][11] = {"List alarms", "Set time", "Reset wheel", "Sound"};
-char menuAlarmString[7][11]; //max number of alarms per day is set here at 7
-char menuSoundString[][11] = {"Sound off", "Sound on"};
+//menu items are all 16 items long to account for the longest item in char array
+char menuMainString[][16] = {"List alarms", "Set time", "Sound"};
+//char menuMainString[][16] = {"List alarms", "Set time", "Reset wheel", "Sound"};
+char menuAlarmString[7][16];
+        //max number of alarms per day is set here at 7.
+        //Max number of chars in each slot is 16, screen width
+char menuSoundString[][16] = {"Sound off", "Sound on"};
 byte menuLeng = 0;
 bool changedMenu = false;
 
@@ -37,7 +39,6 @@ bool changedMenu = false;
 //////////////////////////////////////////////
 //////////////////////////////////////////////
 ////////////////////// CLOCK, SD READER, ALARM
-
 // include the SD library:
 #include <SPI.h>
 #include <SD.h>
@@ -82,7 +83,7 @@ bool soundOn = true;
 #define stepsPerRevolution 200*2 // times two since we have enabled half stepping
 #define stepDelay 5000
 // KEEPING TRACK OF HOW MANY DISPENSES
-int dispenseCount = 1;
+byte dispenseCount = 1;
 bool needToRefill = false;
 
 
@@ -95,10 +96,11 @@ void setup() {
   while (!Serial) ; // wait for Arduino Serial Monitor
   delay(200);
 
+  Serial.println(String(F("Hej")));
   alarmString = readFromSD(alarmFile); //this is only needed on boot, allocate the alarmSTring memory early and keep it
-  Serial.println("alarmString = "+alarmString);
+  Serial.println(String(F("alarmString = "))+alarmString);
   updateAlarmList(alarmString); //only needed on boot, never changes
-  updateAlarmNext(alarmString);
+  updateAlarmNext();
   
   // INIT THE LCD AND MENU VARS
   lcd.begin(16,2);
@@ -176,17 +178,17 @@ void loop() {
 
 // FUNC MENU
 
-void menuWrite(char menu[][11]) {
+void menuWrite(char menu[][16]) {
   //--------------------------------WRITE THE MENU
   //Serial.println(curMenuItem);
   byte index;
-  for(byte i=0; i < 11; i++){
+  for(byte i=0; i < 16; i++){
     if (menu[0+curMenuItem] != "") index = i;
   }
   String temp = String(menu[0+curMenuItem]).substring(0,index+1);
   line0 = '>' + temp;
   if (curMenuItem < menuLeng-1){
-    for(byte i=0; i < 11; i++){
+    for(byte i=0; i < 16; i++){
       if (menu[1+curMenuItem] != "") index = i;
     }
     temp = String(menu[1+curMenuItem]).substring(0,index+1);
@@ -429,6 +431,7 @@ void timeMenu() {
 //??? GÖR OM 
 //checks all alarms on SD card and selects the next alarm to be executed
 //nextAlarmTime is set as next alarm and accompanying string is set in nextAlarmContent
+/*
 void updateAlarmNext(String alarmString){
   String tempTime(5);
   nextAlarmTime = "23:59";
@@ -443,7 +446,7 @@ void updateAlarmNext(String alarmString){
         Serial.println("nextAlarmContent = "+nextAlarmContent);
       }
      }
-     else if(alarmString[i] == ';'){
+     else if(alarmString[i] == '\n'){
       tempTime = "";
      }
      else {
@@ -451,7 +454,33 @@ void updateAlarmNext(String alarmString){
      }
   }
 }
+*/
+void updateAlarmNext(){
+  String tempTime(5); // temporary var for time
+  nextAlarmTime = "23:59"; // initial value
+  
+  Serial.println("Run updateAlarmNext()");
+  for(int i = 0; i < 7; i++) {
+    
+    String tempString = String(menuAlarmString[i]);
+          // set tempString as the string in the current slot of menuAlarmString
+    tempString.trim();
+          // without any spaces before and after
+    Serial.println(String(tempString));
+          
+    if (tempString.length() > 0) {
+      tempTime = tempString.substring(0, 5); // time xx:xx is the first 5 chars
+      Serial.println("tempTime = "+tempTime+", nextAlarmTime = "+nextAlarmTime);
+      if(tempTime > getTime() && tempTime < nextAlarmTime){ //"smallest" time AFTER current time
+        nextAlarmTime = tempTime;
+        nextAlarmContent = tempString.substring(5); // content is everything after the time
+        Serial.println("nextAlarmContent = "+nextAlarmContent);
+      }
+    }
+  }
+}
 
+/*
 void updateAlarmList(String alarmString) {
   byte nrOfLines = 0;
   for(byte i = 0; i < alarmString.length(); i++ ) {
@@ -465,6 +494,53 @@ void updateAlarmList(String alarmString) {
     index = alarmString.substring(index).indexOf(';');
   }
 }
+*/
+
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////
+void updateAlarmList(String alarmString) { // sebsNyaFunktion
+
+  Serial.println("Starting to update the AlarmList");
+  Serial.println("alarmString ="+alarmString);
+  
+  byte nrOfLines = 0; // temporary variable nrOfLines, to calc how many rows we have in alarmString
+  for(byte i = 0; i < alarmString.length(); i++ ) {
+    // for every character in alarmString:
+    if(alarmString[i] == '\n'){ // if this character is '\n'
+      nrOfLines ++;
+      Serial.println("nrOfLines = "+String(nrOfLines));
+      
+    }
+  }
+  // now we know exactly how many rows we have in alarmString
+
+  byte sumIndex = 0;
+  for(byte i = 0; i < nrOfLines; i++) {
+    // for i in the range 0 to nrOfLines-1   
+
+    byte indexOfNextEndOfLine = alarmString.substring(sumIndex).indexOf("\n") + sumIndex;
+          // index of the first newline symbol in the substring from sumIndex
+          
+    String stringToLoad = alarmString.substring(sumIndex, indexOfNextEndOfLine);
+          // stringToLoad is the substring between 0 and next newline symbol
+    Serial.println(String(F("stringToLoad = "))+stringToLoad);
+          
+    stringToLoad.toCharArray(menuAlarmString[i], 16);
+          // insert stringToLoad in place i in menuAlarmString array, has to specify slot size (16)
+          
+    sumIndex += (indexOfNextEndOfLine - sumIndex);
+  }
+}
+
+/*
+OLD textfile:
+17:05?1;
+17:10?1;
+17:12?Ta astmamedicin;
+17:15?;#
+*/
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /*
 //??? UTGÅ FRÅN DETTA
  //denna ska fixas
@@ -501,7 +577,8 @@ void alarm(){
   }
   digitalWrite(buzzerPin, LOW);
   menuWrite(menuMainString);
-  updateAlarmNext(readFromSD(alarmFile));
+  updateAlarmNext();
+  //updateAlarmNext(readFromSD(alarmFile));
   delay(200); // sebTest the buzzer 
 }
 
