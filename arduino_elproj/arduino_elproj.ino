@@ -4,7 +4,7 @@
 //////////////////////        LIBRARIES
 
 #include <LiquidCrystal.h>
-LiquidCrystal lcd(9,8,7,6,5,4); // generates an instance in the lcd
+//LiquidCrystal lcd(9,8,7,6,5,4); // generates an instance in the lcd
 
 //////////////////////////////////////////
 //////////////////////////////////////////
@@ -123,12 +123,6 @@ void setup() {
   alarmString = readFromSD(alarmFile); //this is only needed on boot, allocate the alarmSTring memory early and keep it
   updateAlarmList(alarmString); //only needed on boot, never changes
   updateAlarmNext();
-  
-  // INIT THE LCD AND MENU VARS
-  lcd.begin(16,2);
-  //user welcome message on boot
-  printLCD(String(F("   WELCOME TO")), String(F("    ROSETTEN")));
-
 
   // INIT STEPPER MOTOR SYSTEM
   // Declare pins as output:
@@ -138,6 +132,13 @@ void setup() {
   // INIT BUZZER SYSTEM
   pinMode(buzzerPin, OUTPUT);
   digitalWrite(buzzerPin, LOW);
+
+  // INIT THE LCD AND MENU VARS
+  //lcd.begin(16,2);
+  //user welcome message on boot
+  LiquidCrystal lcd(9,8,7,6,5,4); // generates an instance in the lcd
+  lcd.begin(16,2);
+  printLCD(String(F("   WELCOME TO")), String(F("    ROSETTEN")));
 
   //show the welcome message for some time
   delay(2500);
@@ -223,6 +224,7 @@ void menuWrite(char menu[][16]) {
 
 //prints the two Strings Line0 and Line1 to the LCD display in order
 void printLCD(String Line0, String Line1) {
+  LiquidCrystal lcd(9,8,7,6,5,4); // generates an instance in the lcd
   lcd.clear();
   lcd.setCursor(0,0);
   lcd.print(Line0);
