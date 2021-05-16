@@ -11,6 +11,8 @@ LiquidCrystal lcd(9,8,7,6,5,4); // generates an instance in the lcd
 //////////////////////    GLOBAL VARIABLES
 
 
+
+
 //-------------------------READING KEYBOARD
 const byte kbdPin = A0;
 int kbdIn = 0; // pin for the keyboard
@@ -60,11 +62,11 @@ const int buzzerPin = 10;
 
 
 // SCREEN SAVE
-const int screenSaverTime = 50; // how many loop cyckles before screen enters screen saver
+const byte screenSaverTime = 50; // how many loop cyckles before screen enters screen saver
 int counterScreen = screenSaverTime; // makes sure that the screensaver is shown on boot
 
 // CHECKING THE USERS ALARMS WITH CERTAIN INTERVALS
-const int AlarmCheckTime = 100; // how many loop cyckles between each time the machine checks and updates the list of alarms
+const byte AlarmCheckTime = 100; // how many loop cyckles between each time the machine checks and updates the list of alarms
 int counterAlarmCheck = 0; // counter of keeping track of this
 
 
@@ -88,17 +90,37 @@ bool needToRefill = false;
 
 
 //////////////////////////////////////////////
+#ifdef arm
+// should use uinstd.h to define sbrk but Due causes a conflict
+extern "C" char* sbrk(int incr);
+#else  // ARM
+extern char brkval;
+#endif  // arm
+ 
+int freeMemory() {
+  char top;
+#ifdef arm__
+  return &top - reinterpret_cast<char>(sbrk(0));
+#elif defined(CORE_TEENSY) || (ARDUINO > 103 && ARDUINO != 151)
+  return &top - brkval;
+#else  // arm
+  return brkval ? &top - brkval : &top - malloc_heap_start;
+#endif  // arm
+}
 //////////////////////////////////////////////
-//////////////////////          SETUP        
+
+
+//////////////////////////////////////////////
+//////////////////////////////////////////////
+//////////////////////          SETUP    
+
+
 
 void setup() {
   Serial.begin(9600);
   while (!Serial) ; // wait for Arduino Serial Monitor
   delay(200);
-
-  Serial.println(String(F("Hej")));
   alarmString = readFromSD(alarmFile); //this is only needed on boot, allocate the alarmSTring memory early and keep it
-  Serial.println(String(F("alarmString = "))+alarmString);
   updateAlarmList(alarmString); //only needed on boot, never changes
   updateAlarmNext();
   
