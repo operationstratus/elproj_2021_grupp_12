@@ -10,7 +10,6 @@ LiquidCrystal lcd(9,8,7,6,5,4); // generates an instance in the lcd
 //////////////////////////////////////////
 //////////////////////    GLOBAL VARIABLES
 
-
 //-------------------------READING KEYBOARD
 const byte kbdPin = A0;
 int kbdIn = 0; // pin for the keyboard
@@ -26,15 +25,14 @@ byte menuIntro = 0; // inital switch state of menuMain
 byte curMenuArray = 0;
 byte curMenuItem = 0;
 //menu items are all 16 items long to account for the longest item in char array
-char menuMainString[][16] = {"List alarms", "Set time", "Sound"};
+char menuMainString[][10] = {"List alarms", "Set time", "Sound"};
 //char menuMainString[][16] = {"List alarms", "Set time", "Reset wheel", "Sound"};
-char menuAlarmString[7][16];
+char menuAlarmString[7][10];
         //max number of alarms per day is set here at 7.
         //Max number of chars in each slot is 16, screen width
-char menuSoundString[][16] = {"Sound off", "Sound on"};
+//char menuSoundString[][16] = {"Sound off", "Sound on"};
 byte menuLeng = 0;
 bool changedMenu = false;
-
 
 //////////////////////////////////////////////
 //////////////////////////////////////////////
@@ -49,7 +47,7 @@ bool changedMenu = false;
 
 //files and content
 char alarmFile[] = "alarms.txt";
-String alarmString;
+String alarmString(200);
 
 //variables
 String nextAlarmTime(6); //6 chars since it is hh:MM and exit character
@@ -58,15 +56,14 @@ String nextAlarmContent(25); //12*2 (LCD characters) + exit character
 //Buzzer
 const int buzzerPin = 10;
 
-
 // SCREEN SAVE
 const byte screenSaverTime = 50; // how many loop cyckles before screen enters screen saver
 int counterScreen = screenSaverTime; // makes sure that the screensaver is shown on boot
 
+//varför använder vi inte bara counterScreen??
 // CHECKING THE USERS ALARMS WITH CERTAIN INTERVALS
 const byte AlarmCheckTime = 100; // how many loop cyckles between each time the machine checks and updates the list of alarms
 int counterAlarmCheck = 0; // counter of keeping track of this
-
 
 // ALARM
 bool soundOn = true;
@@ -76,7 +73,6 @@ bool soundOn = true;
 //////////////////////////////////////////////
 //////////////////////       STEPPER MOTOR
 
-/*Example sketch to control a stepper motor with A4988/DRV8825 stepper motor driver and Arduino without a library. More info: https://www.makerguides.com */
 // Define stepper motor connections and steps per revolution:
 #define dirPin 2
 #define stepPin 3
@@ -84,7 +80,7 @@ bool soundOn = true;
 #define stepDelay 5000
 // KEEPING TRACK OF HOW MANY DISPENSES
 byte dispenseCount = 1;
-bool needToRefill = false;
+bool needToRefill = false; // varför? om dispenseCount = 0 är det överflödigt
 
 //////////////////////////////////////////////
 #ifdef arm
@@ -122,11 +118,6 @@ void setup() {
   
   updateAlarmList(alarmString); //only needed on boot, never changes
   updateAlarmNext();
-  
-  // INIT THE LCD AND MENU VARS
-  lcd.begin(16,2);
-  //user welcome message on boot
-  printLCD(String(F("   WELCOME TO")), String(F("    ROSETTEN")));
 
 
   // INIT STEPPER MOTOR SYSTEM
@@ -137,6 +128,11 @@ void setup() {
   // INIT BUZZER SYSTEM
   pinMode(buzzerPin, OUTPUT);
   digitalWrite(buzzerPin, LOW);
+
+  // INIT THE LCD AND MENU VARS
+  lcd.begin(16,2);
+  //user welcome message on boot
+  printLCD(String(F("   WELCOME TO")), String(F("    ROSETTEN")));
 
   //show the welcome message for some time
   delay(2500);
@@ -199,17 +195,17 @@ void loop() {
 
 // FUNC MENU
 
-void menuWrite(char menu[][16]) {
+void menuWrite(char menu[][10]) {
   //--------------------------------WRITE THE MENU
   //Serial.println(curMenuItem);
   byte index;
-  for(byte i=0; i < 16; i++){
+  for(byte i=0; i < 10; i++){
     if (menu[0+curMenuItem] != "") index = i;
   }
   String temp = String(menu[0+curMenuItem]).substring(0,index+1);
   line0 = '>' + temp;
   if (curMenuItem < menuLeng-1){
-    for(byte i=0; i < 16; i++){
+    for(byte i=0; i < 10; i++){
       if (menu[1+curMenuItem] != "") index = i;
     }
     temp = String(menu[1+curMenuItem]).substring(0,index+1);
@@ -266,10 +262,8 @@ void updateKBD() {
   delay(100);
 }
 
-
+//updates the menu with screensaver if user inactive and facilitates the selection of items in the menu
 void updateMenu(){
-
-  
   //---------------------------------------SCREEN SAVER
   if (counterScreen == screenSaverTime) {
     if (dispenseCount < 10) {
@@ -307,7 +301,7 @@ void updateMenu(){
             changedMenu = false;
             break;
           }
-          
+
           if (keyState == 'U' && curMenuItem > 0) {
             curMenuItem--;
             menuWrite(menuMainString);
@@ -325,7 +319,7 @@ void updateMenu(){
           }
         break;
         
-        case 1:
+        case 1: //list all alarms
           menuLeng = sizeof(menuAlarmString)/sizeof(menuAlarmString[0]); // calculate the length of a menuArray
 
           //sebTest
@@ -353,7 +347,7 @@ void updateMenu(){
           }
         break;
   
-        case 2:
+        case 2: //setTime()
           changedMenu = true;//enters timeMenu() with an update before button is pressed
           timeMenu();
           curMenuArray = 0;
@@ -362,8 +356,17 @@ void updateMenu(){
           menuWrite(menuMainString);
         break;
   
-        case 3:
-          menuLeng = sizeof(menuSoundString)/sizeof(menuSoundString[0]); // calculate the length of a menuArray
+        case 3: //sound setting, toggles soundOn and beeps if soundOn is now true
+          soundOn = !(soundOn);
+          if (soundOn == true) {
+            digitalWrite(buzzerPin, HIGH);
+            delay(500);
+            digitalWrite(buzzerPin, LOW);
+          }
+          curMenuArray = 0;
+          curMenuItem = 0;
+          menuWrite(menuMainString);
+          /*menuLeng = sizeof(menuSoundString)/sizeof(menuSoundString[0]); // calculate the length of a menuArray
           if (keyState == 'U' && curMenuItem > 0) {
             curMenuItem--;
             menuWrite(menuSoundString);
@@ -378,7 +381,7 @@ void updateMenu(){
             
           } else {
             menuWrite(menuSoundString);
-          }
+          }*/
         break;
       }
     }
@@ -449,7 +452,6 @@ void timeMenu() {
 //////////////////////////////////////////////
 /////////////  FUNCTIONS FOR SD, ALARM, CLOCK
 
-//??? GÖR OM 
 //checks all alarms on SD card and selects the next alarm to be executed
 //nextAlarmTime is set as next alarm and accompanying string is set in nextAlarmContent
 /*
@@ -500,7 +502,6 @@ void updateAlarmNext(){
     }
   }
 }
-
 /*
 void updateAlarmList(String alarmString) {
   byte nrOfLines = 0;
@@ -511,35 +512,45 @@ void updateAlarmList(String alarmString) {
   }
   byte index = 0;
   for(byte i = 0; i < nrOfLines; i++) {
-    alarmString.substring(index, alarmString.substring(index).indexOf(';')).toCharArray(menuAlarmString[i], 11);
-    index = alarmString.substring(index).indexOf(';');
+    //alarmString.substring(index, alarmString.substring(index).indexOf(';')).toCharArray(menuAlarmString[i], 11);
+    alarmString.substring(index, 4).toCharArray(menuAlarmString[i], 11); //get hh:MM of each line
+    index += 5;
+    if (alarmString.charAt(index) == '1'){ //a dose is represented by a D in the list
+      menuAlarmString[i][5] = 'D';
+    }
+    else {
+      menuAlarmString[i][5] = 'M';
+    }
+    index += alarmString.substring(index).indexOf(';'); //set index to the beginning of next line
+  }
+
+  //debug, print menuAlarmString
+  for(byte i = 0; i<sizeof(menuAlarmString); i++){
+    for(byte j = 0; j<16; j++)  {
+      if (menuAlarmString[i][j] != ""){
+        Serial.print(menuAlarmString[i][j]);
+      }
+    }
   }
 }
+
 */
-
-
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////
 void updateAlarmList(String alarmString) { // sebsNyaFunktion
-
-  Serial.println("Starting to update the AlarmList");
-  Serial.println("alarmString ="+alarmString);
-  
   byte nrOfLines = 0; // temporary variable nrOfLines, to calc how many rows we have in alarmString
   for(byte i = 0; i < alarmString.length(); i++ ) {
     // for every character in alarmString:
-    if(alarmString[i] == '\n'){ // if this character is '\n'
+    if(alarmString[i] == '\n' or alarmString[i] == ';'){ // if this character is '\n' or ';'
       nrOfLines ++;
       Serial.println("nrOfLines = "+String(nrOfLines));
       
     }
   }
-  // now we know exactly how many rows we have in alarmString
-
   byte sumIndex = 0;
   for(byte i = 0; i < nrOfLines; i++) {
     // for i in the range 0 to nrOfLines-1   
 
-    byte indexOfNextEndOfLine = alarmString.substring(sumIndex).indexOf("\n") + sumIndex;
+    byte indexOfNextEndOfLine = alarmString.substring(sumIndex).indexOf(';') + sumIndex;
           // index of the first newline symbol in the substring from sumIndex
           
     String stringToLoad = alarmString.substring(sumIndex, indexOfNextEndOfLine);
@@ -553,35 +564,8 @@ void updateAlarmList(String alarmString) { // sebsNyaFunktion
   }
 }
 
-/*
-OLD textfile:
-17:05?1;
-17:10?1;
-17:12?Ta astmamedicin;
-17:15?;#
-*/
-
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////
-/*
-//??? UTGÅ FRÅN DETTA
- //denna ska fixas
-String getAlarmInfo(char alarmfile[]){
-  Serial.println("getAlarmInfo called");
-  String alarmString = readFromSD(alarmFile);
-  byte nrOfLines = countLines(alarmString);
-  
-  int index = 0;
-  String temp;
-  for(int i = 0; i < nrOfLines; i++ ) {
-    //set pointer of line i to content of line i in format 'hh:MM?ttt...t;'
-    *pointer[i] = alarmString.subString(index, alarmString.substring(index+1).indexOf(';'));
-  }
-  for(int i = 0; i < nrOfLines; i++ ) {
-    Serial.println(*pointer[i]);
-  }
-  
-}
-*/
+
 //activates the alarm and then calls getNextAlarm() after alarm has been deactivated
 void alarm(){
   Serial.println(String(F("Alarm!")));
@@ -589,7 +573,7 @@ void alarm(){
     dispense();
   } else {
     //??? FIXA, SKA TA IN nextAlarmContent inte hårdkodat
-    printLCD(String(F("Take your meds!")), "");
+    printLCD(nextAlarmContent.substring(0,16), nextAlarmContent.substring(16,32));
   }
 
   digitalWrite(buzzerPin, soundOn);
@@ -599,8 +583,7 @@ void alarm(){
   digitalWrite(buzzerPin, LOW);
   menuWrite(menuMainString);
   updateAlarmNext();
-  //updateAlarmNext(readFromSD(alarmFile));
-  delay(200); // sebTest the buzzer 
+  delay(200);
 }
 
 //reads fileName from SD card without delimiter
@@ -610,12 +593,17 @@ String readFromSD(String fileName){
   SD.begin();
   File readFile = SD.open(fileName);
   if(readFile){
+    bool reading = true;
     //??? cap maximum string length by allocating size on declaration? Eller bara hoppas att det återvinns
     String res = "";
-    while(readFile.available()){
+    while(readFile.available() and reading == true){
       char nextChar = char(readFile.read());
+      Serial.print(nextChar);
       //EOF is reached
       if(nextChar == '#'){
+        Serial.println("BREAKING");
+        readFile.close();
+        reading = false;
         break;
       }
       res += nextChar;
