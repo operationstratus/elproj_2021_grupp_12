@@ -1,0 +1,13 @@
+10:01?1;
+10:02?Ta asmamed!!;
+10:03?1;
+10:04?MSG2;
+10:05?1;
+#
+__________
+How to use:
+Please end the list of alarms with an "#" on a new row. That marks the end of the list.
+To enter an alarm, write the time xx:xx followed by either a 10 character message, or the word "dose".
+If you enter "dose", the Rosetten will dispense its next content at that time.
+If you enter a 10 character message, the Rosetten will only display that message at that time withoput dispenssing.
+
