@@ -8,9 +8,9 @@ void setup() {
   // Declare pins as output:
   pinMode(stepPin, OUTPUT);
   pinMode(dirPin, OUTPUT);
-  for(int i = 0; i < 24; i++){
+  for(int i = 0; i < 7; i++){
     dispense();
-    delay(1000);
+    delay(5000);
   }
 }
 void loop() {
