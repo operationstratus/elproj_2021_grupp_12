@@ -60,7 +60,6 @@ const int buzzerPin = 10;
 const byte screenSaverTime = 50; // how many loop cyckles before screen enters screen saver
 int counterScreen = screenSaverTime; // makes sure that the screensaver is shown on boot
 
-//varför använder vi inte bara counterScreen??
 // CHECKING THE USERS ALARMS WITH CERTAIN INTERVALS
 const byte AlarmCheckTime = 100; // how many loop cyckles between each time the machine checks and updates the list of alarms
 int counterAlarmCheck = 0; // counter of keeping track of this
@@ -97,7 +96,6 @@ void setup() {
   while (!Serial) ; // wait for Arduino Serial Monitor
   delay(200);
   alarmString = readFromSD(alarmFile); //this is only needed on boot, allocate the alarmSTring memory early and keep it
-  //Serial.println(String(alarmString));
   updateAlarmList(alarmString); //only needed on boot, never changes
 
   updateAlarmNext();
@@ -157,8 +155,7 @@ void loop() {
     counterAlarmCheck++;
   } else {
     counterAlarmCheck = 0;
-    if (getTime() == nextAlarmTime) {
-      // checks if alarm() should be called
+    if (getTime() == nextAlarmTime) { // checks if alarm() should be called
       alarm();
     }
     updateAlarmNext();
@@ -173,14 +170,10 @@ void loop() {
 //////////////////////////////////////////////
 //////////////////////      FUNCTIONS
 
-//supposed to be empty? Eller är det header för kommande?
-
-
 // FUNC MENU
 
 void menuWrite(char menu[][10]) {
   //--------------------------------WRITE THE MENU
-  //Serial.println(curMenuItem);
   byte index;
   for (byte i = 0; i < 10; i++) {
     if (menu[0 + curMenuItem] != "") index = i;
@@ -214,7 +207,6 @@ void printLCD(String Line0, String Line1) {
 //assigns keyState a char value according to the kbdPin read value
 void updateKBD() {
   int kbdIn = analogRead(kbdPin);
-  //Serial.println("kbdIn = "+String(kbdIn)); //debug
 
   //Configuration:
   //               Up
@@ -365,7 +357,7 @@ void timeMenu() {
     if (changedMenu or keyState != prevKeyState) {
       if (menuIndex < 2 && buttonNotPressed) { //pointer is on hh or mm
         if (keyState == 'U') {
-          tim[menuIndex] ++; //??? kanske kan göras på en rad?
+          tim[menuIndex] ++;
           tim[menuIndex] = tim[menuIndex] % modArr[menuIndex]; //count up
           buttonNotPressed = false;
         }
@@ -405,7 +397,7 @@ void timeMenu() {
             line2 += ' ';
           }
         }
-        line2 = line2 + '^' + '^';//2 characters to avoid String()
+        line2 = line2 + '^' + '^'; //2 characters to avoid String()
         printLCD(line1, line2);
       }
       prevKeyState = keyState;
@@ -419,7 +411,6 @@ void timeMenu() {
 
 //checks all alarms on SD card and selects the next alarm to be executed
 //nextAlarmTime is set as next alarm and accompanying string is set in nextAlarmContent
-
 void updateAlarmNext(){
   String tempTime(5);
   tempTime = ""; // for some reason, tempTime is initially set to "5"
@@ -444,74 +435,12 @@ void updateAlarmNext(){
   }
 }
 
-//???
-
-/*
-void updateAlarmNext() {
-  String tempTime(5); // temporary var for time
-  nextAlarmTime = "23:59"; // initial value
-
-  menuLeng = sizeof(menuAlarmString) / sizeof(menuAlarmString[0]); // calculate the length of a menuArray
-  for (int i = 0; i < menuLeng; i++) {
-
-    String tempString = String(menuAlarmString[i]);
-    // set tempString as the string in the current slot of menuAlarmString
-    tempString.trim();
-    // without any spaces before and after
-
-    if (tempString.length() > 0) {
-      tempTime = tempString.substring(0, 5); // time xx:xx is the first 5 chars
-
-      if (tempTime > getTime() && tempTime < nextAlarmTime) { //"smallest" time AFTER current time
-        nextAlarmTime = tempTime;
-        nextAlarmContent = tempString.substring(5); // content is everything after the time
-
-      }
-    }
-  }
-}
-*/
-/*
-  void updateAlarmList(String alarmString) {
-  byte nrOfLines = 0;
-  for(byte i = 0; i < alarmString.length(); i++ ) {
-    if(alarmString[i] == ';'){
-      nrOfLines ++;
-    }
-  }
-  byte index = 0;
-  for(byte i = 0; i < nrOfLines; i++) {
-    //alarmString.substring(index, alarmString.substring(index).indexOf(';')).toCharArray(menuAlarmString[i], 11);
-    alarmString.substring(index, 4).toCharArray(menuAlarmString[i], 11); //get hh:MM of each line
-    index += 5;
-    if (alarmString.charAt(index) == '1'){ //a dose is represented by a D in the list
-      menuAlarmString[i][5] = 'D';
-    }
-    else {
-      menuAlarmString[i][5] = 'M';
-    }
-    index += alarmString.substring(index).indexOf(';'); //set index to the beginning of next line
-  }
-
-  //debug, print menuAlarmString
-  for(byte i = 0; i<sizeof(menuAlarmString); i++){
-    for(byte j = 0; j<16; j++)  {
-      if (menuAlarmString[i][j] != ""){
-        Serial.print(menuAlarmString[i][j]);
-      }
-    }
-  }
-  }
-
-*/
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////
 void updateAlarmList(String alarmString) {
   byte nrOfLines = 0; // temporary variable nrOfLines, to calc how many rows we have in alarmString
   for (byte i = 0; i < alarmString.length(); i++ ) {
     // for every character in alarmString:
     if (alarmString[i] == '\n') { // if this character is ';'
       nrOfLines ++;
-      //Serial.println(String(F("nrOfLines = "+String(nrOfLines))));
 
     }
   }
@@ -530,16 +459,11 @@ void updateAlarmList(String alarmString) {
       stringToLoad = stringToLoad.substring(0, 5) + String(F(" MSG"));
     }
     // stringToLoad is the substring between 0 and next newline symbol
-    //Serial.println(String(F("    stringToLoad = ")) + stringToLoad);
-
     stringToLoad.toCharArray(menuAlarmString[i], 10);
     // insert stringToLoad in place i in menuAlarmString array, has to specify slot size (16)
-
     sumIndex += (indexOfNextEndOfLine - sumIndex)+1;
   }
 }
-
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 //activates the alarm and then calls getNextAlarm() after alarm has been deactivated
 void alarm() {
@@ -576,7 +500,6 @@ String readFromSD(String fileName) {
   File readFile = SD.open(fileName);
   if (readFile) {
     bool reading = true;
-    //??? cap maximum string length by allocating size on declaration? Eller bara hoppas att det återvinns
     String res = "";
     while (readFile.available() and reading == true) {
       char nextChar = char(readFile.read());

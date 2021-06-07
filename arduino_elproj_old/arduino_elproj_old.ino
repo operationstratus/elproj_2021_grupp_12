@@ -51,7 +51,7 @@ String alarmFile = "alarms.txt";
 const int chipSelect = 10;
 
 //variables
-String nextAlarmTime = "";
+String nextAlarmTime(5);
 String nextAlarmContent = "";
 
 //Buzzer
@@ -107,7 +107,7 @@ void setup() {
 
 
   //??? // TESTS
-  setRTC(17, 4);
+  setRTC(10, 0);
   getNextAlarm();
   //Alarm();
 
@@ -162,7 +162,6 @@ void myLCDprint(String line0, String line1) {
 void readKBD() {
   // ----------------------------------------READ KEYBOARD
   kbdIn = analogRead(kbdPin);
-  Serial.println("kbdIn = "+String(kbdIn));
   /* Configuration:
    *               Up
    * Enter    Left    Right
@@ -284,9 +283,6 @@ void alarmMenu() {
 }
 
 void soundMenu() {
-  
-  Serial.println("NUUUUUUU IIIIIII SOOOOOUUUND, keystate="+keyState);
-
   counter = 0;
   menuWrite(menuSoundString);
   // calculate the lenght of the current menu array
@@ -330,16 +326,19 @@ void soundMenu() {
 void getNextAlarm(){
   String alarmString = readFromSD(alarmFile);
   String tempTime = "";
-  nextAlarmTime = "23:59";
+  nextAlarmTime = String(F("23:59"));
   Serial.println(alarmString);
   for(int i = 0; i < alarmString.length(); i++ ) {
      if(alarmString[i] == '?'){
       //compare times
       tempTime.trim();
-      Serial.println(tempTime+" "+getTime()+" "+nextAlarmTime);
+      Serial.println(String(F("tempTime: "))+tempTime);
+      Serial.println(String(F("getTime: ")) +getTime());
+      Serial.println(String(F("nextAlarmTime: "))+nextAlarmTime);
+      Serial.println(String(F("huh?")));
       if(tempTime > getTime() && tempTime < nextAlarmTime){ //"smallest" time AFTER current time
         nextAlarmTime = tempTime;
-        nextAlarmContent = alarmString.substring(i+1,alarmString.substring(i+1).indexOf(';')+i+1);
+        nextAlarmContent = alarmString.substring(i+2,alarmString.substring(i+1).indexOf(';')+i+2);
       }
      }
      else if(alarmString[i] == ';'){
@@ -349,17 +348,17 @@ void getNextAlarm(){
       tempTime += alarmString[i];
      }
   }
-  Serial.println("#"+nextAlarmTime+"#");
-  Serial.println("#"+nextAlarmContent+"#");
+  Serial.println('#'+nextAlarmTime+'#');
+  Serial.println('#'+nextAlarmContent+'#');
 }
 
 //activates the alarm and then calls getNextAlarm() after alarm has been deactivated
 void alarm(){
-  Serial.println("Alarm!");
+  Serial.println(String(F("Alarm!")));
   if(nextAlarmContent == "1"){
     dispense();
   } else {
-    myLCDprint("Take your meds!", "");
+    myLCDprint(String(F("Take your meds!")), "");
     //myLCDprint(nextAlarmContent, "");
   }
   while(keyState != "E"){
@@ -393,7 +392,7 @@ String readFromSD(String fileName){
     return res;
   }
   else{
-    Serial.println("Err: cannot open file (read): "+fileName);
+    Serial.println(String(F("Err: cannot open file (read): "))+fileName);
   }
 }
 
@@ -413,7 +412,7 @@ void writeToSD(String fileName, String content){
     }
   }
   else {
-    Serial.println("Err: cannot open file (write): "+fileName);
+    Serial.println(String(F("Err: cannot open file (write): "))+fileName);
   }
   writeFile.close();
 }
@@ -447,10 +446,10 @@ String getTime(){
     if (RTC.chipPresent()) {
       //initialize clock
       if(!setRTC){
-        Serial.println("ERR: RTC present but can't be set");
+        Serial.println(String(F("ERR: RTC present but can't be set")));
       }
     } else {
-      Serial.println("ERR: RTC not present");
+      Serial.println(String(F("ERR: RTC not present")));
       return;
     }
   }
@@ -472,7 +471,7 @@ String getTime(){
 
 void dispense(){
   // Set the spinning direction clockwise:
-  digitalWrite(dirPin, HIGH);
+  digitalWrite(dirPin, LOW);
   // Spin the stepper motor 1 revolution slowly:
   for (int i = 0; i < (stepsPerRevolution)/8; i++) {
     // These four lines result in 1 step:
